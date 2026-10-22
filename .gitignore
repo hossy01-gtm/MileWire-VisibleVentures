@@ -2,8 +2,16 @@
 .env
 .env.*
 !.env.example
+.vercel
 node_modules/
 dist/
 build/
 *.log
 .cursor/
+.next/
+out/
+coverage/
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+supabase/.temp/
