@@ -3,9 +3,7 @@ import { ClosingCta, FeatureGrid, PricingCards, StepCards, ValueGrid } from "@/c
 import { ChartsShowcase } from "@/components/site/ChartsShowcase";
 import { FleetLineup } from "@/components/site/FleetLineup";
 import { FocusShowcase } from "@/components/site/FocusShowcase";
-import { ProductShot } from "@/components/site/ProductShot";
-import { SpeedChart } from "@/features/fleets/charts";
-import { sampleDrive } from "@/components/site/sample-drive";
+import { PhoneFrame, ProductShot } from "@/components/site/ProductShot";
 import { CtaButton, PageHero, Section } from "@/components/site/Prose";
 import { CubeIcon, GaugeIcon, PinIcon, PulseIcon, RewindIcon, TruckIcon, UsersIcon } from "@/components/site/icons";
 import { siteCopy as copy } from "@/lib/site-copy";
@@ -18,9 +16,8 @@ export const metadata: Metadata = {
 // One icon per console feature, in the same order as copy.console.features.
 const featureIcons = [PinIcon, RewindIcon, CubeIcon, PulseIcon, TruckIcon, GaugeIcon, UsersIcon];
 
-/** Hero visual: the real 3D replay, with the console's own speed chart floating over it. */
+/** Hero visual: the real 3D replay in the console, with the phone app overlaid in front of it. */
 function HeroVisual() {
-  const drive = sampleDrive();
   return (
     <ProductShot
       src="/landing/replay-3d.webp"
@@ -29,12 +26,13 @@ function HeroVisual() {
       height={1471}
       sizes="(min-width: 768px) 55vw, 100vw"
       priority
-      className="rise"
+      className="rise mb-8 mr-6 sm:mr-10"
     >
-      <div className="absolute left-[3%] top-[18%] hidden w-[34%] border border-border bg-background/90 p-3 shadow-xl backdrop-blur sm:block">
-        <p className="eyebrow mb-1">Speed</p>
-        <SpeedChart path={drive.path} jolts={drive.jolts} cursorMs={drive.durationMs * 0.42} unit="km" className="h-14" />
-      </div>
+      <PhoneFrame
+        src="/landing/phone-home.webp"
+        alt="The MileWire app on an iPhone: a dark map with the Track mode button"
+        className="absolute -bottom-8 -right-6 w-[26%] sm:-right-10"
+      />
     </ProductShot>
   );
 }

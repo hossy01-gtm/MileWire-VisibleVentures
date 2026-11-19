@@ -1,17 +1,14 @@
 import type { ReactNode } from "react";
 import { DailyBars, MotionChart, SpeedChart } from "@/features/fleets/charts";
-import { buildDemoDrives, DEMO_MEMBERS, DEMO_RANGE } from "@/lib/data/demoData";
 import { bumpsPerUnit, formatDistance, formatDuration, formatSpeed } from "@/lib/format";
 import { summarizeMotion } from "@/lib/motion";
-import { sampleDrive } from "./sample-drive";
+import { sampleDaily, sampleDrive, sampleDriverName, sampleFleetName } from "./sample-drive";
 
 /**
- * The console's own speed, motion and distance charts, drawn from the sample
- * fleet's recorded history (the same data the demo console uses), so the
- * landing page shows exactly what a manager sees rather than a mock-up.
+ * The console's own speed, motion and distance charts, drawn from a real
+ * recorded drive and the demo fleet's daily distances (see sample-drive.ts), so
+ * the landing page shows exactly what a manager sees rather than a mock-up.
  */
-
-const DAY_MS = 86_400_000;
 
 function Card({ eyebrow, title, className = "", children }: { eyebrow: string; title: string; className?: string; children: ReactNode }) {
   return (
@@ -35,21 +32,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 export function ChartsShowcase() {
-  const drives = buildDemoDrives();
   const drive = sampleDrive();
-  const driver = DEMO_MEMBERS.find((m) => m.userId === drive.userId)?.displayName ?? "Driver";
+  const driver = sampleDriverName;
   const motion = summarizeMotion(drive.motion);
-
-  // Whole-fleet distance per day across the sample range (UTC days; every sample drive starts mid-day UTC).
-  const daily = Array.from({ length: DEMO_RANGE.days }, (_, i) => {
-    const start = DEMO_RANGE.startDay + i * DAY_MS;
-    const day = drives.filter((d) => d.startedAt >= start && d.startedAt < start + DAY_MS);
-    return {
-      day: new Date(start).toISOString().slice(0, 10),
-      distanceM: day.reduce((sum, d) => sum + d.distanceM, 0),
-      drives: day.length,
-    };
-  });
+  const daily = sampleDaily();
   const dateLabel = new Date(drive.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
   const t0 = drive.path[0][2];
   const cursorMs = drive.durationMs * 0.42;
@@ -66,7 +52,7 @@ export function ChartsShowcase() {
       <Card eyebrow="Speed" title={`${driver} · ${dateLabel}`} className="lg:col-span-2">
         <SpeedChart path={drive.path} jolts={drive.jolts} cursorMs={cursorMs} unit="km" className="h-40 md:h-52" />
       </Card>
-      <Card eyebrow="Distance per day" title="Sample fleet · Nov 1–16">
+      <Card eyebrow="Distance per day" title={`${sampleFleetName} · Nov 1–16`}>
         <DailyBars data={daily} unit="km" className="h-40 md:h-52" />
       </Card>
 

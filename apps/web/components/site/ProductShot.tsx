@@ -38,3 +38,17 @@ export function ProductShot({
     </div>
   );
 }
+
+/**
+ * A phone screenshot in a dark bezel. The screenshot already includes the
+ * status bar and Dynamic Island, so the frame only adds the rounded body.
+ */
+export function PhoneFrame({ src, alt, className = "" }: { src: ImageProps["src"]; alt: string; className?: string }) {
+  return (
+    <div
+      className={`rounded-[15%/7%] border-[3px] border-[#2a2420] bg-black p-[3px] shadow-[0_28px_70px_-8px_rgb(0_0_0/0.95),0_0_0_1px_rgb(255_255_255/0.08)] ${className}`}
+    >
+      <Image src={src} alt={alt} width={600} height={1305} sizes="(min-width: 768px) 14vw, 26vw" className="block h-auto w-full rounded-[13%/6%]" />
+    </div>
+  );
+}

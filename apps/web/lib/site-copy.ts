@@ -89,7 +89,7 @@ export const siteCopy = {
   charts: {
     eyebrow: "Speed and motion",
     title: "See what happened on every drive",
-    lead: "Speed, motion-sensor readings and bump markers for each trip, with distance per day across the fleet. These are the console's own charts, drawn from a sample fleet.",
+    lead: "Speed, motion-sensor readings and bump markers for each trip, with distance per day across the fleet. These are the console's own charts, drawn from a real drive recorded on a phone in our demo fleet.",
   },
 
   why: {
