@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "MileWire",
+    "slug": "milewire",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "milewire",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "app.milewire.mobile",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "app.milewire.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#CD7F32",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 112
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "MileWire uses your location to show the map, to start Track mode when you start driving, and to record the route and distance of your drives.",
+          "motionUsagePermission": "MileWire reads motion sensors to detect bumps and rough road while you track a drive."
+        }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsVersion": "11.33.0"
+        }
+      ],
+      "expo-dev-client"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
