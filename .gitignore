@@ -16,3 +16,12 @@ coverage/
 next-env.d.ts
 supabase/.temp/
 .env*
+
+# Expo
+.expo/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+
+# Cesium static assets are copied from node_modules at dev/build time
+apps/web/public/cesium/

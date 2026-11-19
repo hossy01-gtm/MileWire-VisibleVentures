@@ -9,7 +9,7 @@ I'm Arman, building MileWire in First Commit. Claude runs my whole stack from th
 - Browser: not set up (no Claude in Chrome). Check the live site with curl instead. Live: https://milewire.vercel.app
 
 ## The loop for every change
-1. Make the change and run it locally if useful (`npm run dev`).
+1. Make the change and run it locally if useful (`npm run dev:web` from the repo root; the repo is an npm-workspaces monorepo with `apps/web` and `apps/mobile`).
 2. Commit with a clear message and push to main. Vercel deploys every push automatically.
 3. Check the deployment until it's ready (Vercel MCP, or `vercel ls` / `vercel inspect <url> --logs`). If the build fails, read the build log, fix it, and push again.
 4. Fetch the live site and check the change works.
