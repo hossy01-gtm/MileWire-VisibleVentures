@@ -30,21 +30,80 @@ export async function joinFleet(rawCode: string, displayName: string): Promise<J
   }
   const row = Array.isArray(data) ? data[0] : data;
   if (!row?.fleet_id) return { ok: false, message: 'No fleet matches that code.' };
+
+  // Joining a different fleet replaces the old membership: the old manager must
+  // stop seeing this driver. Joined first, so a failed join never strands them.
+  const previous = useSettingsStore.getState().fleet;
+  if (previous && previous.fleetId !== row.fleet_id) {
+    await flushPendingUploads(); // hand over drives driven under the old fleet while still a member
+    useRecentsStore.getState().unstampPending(previous.fleetId);
+    await removeMembership(previous.fleetId, userId);
+  }
+
   const membership: FleetMembership = { fleetId: row.fleet_id, fleetName: row.fleet_name, displayName: name };
   useSettingsStore.getState().setFleet(membership);
   return { ok: true, membership };
+}
+
+/** Delete this driver's membership row and live position on the server. Best effort. */
+async function removeMembership(fleetId: string, userId: string): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb.from('fleet_members').delete().eq('fleet_id', fleetId).eq('user_id', userId);
+  await sb.from('live_positions').delete().eq('user_id', userId);
 }
 
 export async function leaveFleet(): Promise<void> {
   const fleet = useSettingsStore.getState().fleet;
   useSettingsStore.getState().setFleet(null);
   if (fleet) useRecentsStore.getState().unstampPending(fleet.fleetId);
-  const sb = getSupabase();
-  if (!sb || !fleet) return;
+  if (!fleet) return;
   const userId = await ensureUserId();
   if (!userId) return;
-  await sb.from('fleet_members').delete().eq('fleet_id', fleet.fleetId).eq('user_id', userId);
-  await sb.from('live_positions').delete().eq('user_id', userId);
+  await removeMembership(fleet.fleetId, userId);
+}
+
+export type MembershipCheck = 'ok' | 'removed' | 'unknown';
+
+/**
+ * Confirm the fleet this phone believes it belongs to still has this driver on
+ * its roster. A manager can remove a driver, or delete the fleet, at any time;
+ * the phone only finds out by asking. Offline or any other failure is
+ * 'unknown' and changes nothing, so a flaky connection never kicks a driver out.
+ */
+export async function syncMembership(): Promise<MembershipCheck> {
+  const fleet = useSettingsStore.getState().fleet;
+  if (!fleet) return 'ok';
+  const sb = getSupabase();
+  if (!sb) return 'unknown';
+  const { data: session } = await sb.auth.getSession();
+  const userId = session.session?.user.id;
+  if (!userId) return 'unknown';
+
+  const { data, error } = await sb
+    .from('fleet_members')
+    .select('display_name')
+    .eq('fleet_id', fleet.fleetId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) return 'unknown';
+
+  if (!data) {
+    // Only act if the driver is still in the fleet we checked (they may have switched mid-request).
+    if (useSettingsStore.getState().fleet?.fleetId !== fleet.fleetId) return 'unknown';
+    useSettingsStore.getState().setFleet(null);
+    useRecentsStore.getState().unstampPending(fleet.fleetId);
+    void clearLivePosition();
+    return 'removed';
+  }
+
+  // Keep the shown fleet name current if the manager renamed it.
+  const { data: f } = await sb.from('fleets').select('name').eq('id', fleet.fleetId).maybeSingle();
+  if (f?.name && f.name !== fleet.fleetName) {
+    const current = useSettingsStore.getState().fleet;
+    if (current?.fleetId === fleet.fleetId) useSettingsStore.getState().setFleet({ ...current, fleetName: f.name });
+  }
+  return 'ok';
 }
 
 function toRow(drive: DriveRecord, userId: string) {
@@ -69,27 +128,67 @@ function toRow(drive: DriveRecord, userId: string) {
   };
 }
 
-/** Upload one completed drive that was stamped with a fleet. True on success. */
-export async function uploadDrive(drive: DriveRecord): Promise<boolean> {
-  if (drive.status !== 'completed' || !drive.fleetId) return false;
-  const sb = getSupabase();
-  if (!sb) return false;
-  const userId = await ensureUserId();
-  if (!userId) return false;
-  const { error } = await sb.from('drive_sessions').upsert(toRow(drive, userId), { onConflict: 'id' });
-  if (error) return false;
-  useRecentsStore.getState().markUploaded(drive.id, Date.now());
-  return true;
+type UploadOutcome = 'uploaded' | 'retry' | 'rejected';
+
+/**
+ * Postgres access (42501) and data (22xxx, 23xxx) errors are the server saying
+ * no to this particular drive; retrying cannot help. Anything else (offline,
+ * expired token, timeouts) is worth another try.
+ */
+function isRejection(code: string | undefined): boolean {
+  return !!code && (code === '42501' || /^2[23]\d{3}$/.test(code));
 }
 
-/** Retry every fleet-stamped drive that has not reached the backend yet. */
+async function tryUpload(drive: DriveRecord): Promise<UploadOutcome> {
+  if (drive.status !== 'completed' || !drive.fleetId) return 'rejected';
+  const sb = getSupabase();
+  if (!sb) return 'retry';
+  const userId = await ensureUserId();
+  if (!userId) return 'retry';
+  const { error } = await sb.from('drive_sessions').upsert(toRow(drive, userId), { onConflict: 'id' });
+  if (error) return isRejection(error.code) ? 'rejected' : 'retry';
+  useRecentsStore.getState().markUploaded(drive.id, Date.now());
+  return 'uploaded';
+}
+
+/** Upload one completed drive that was stamped with a fleet. True on success. */
+export async function uploadDrive(drive: DriveRecord): Promise<boolean> {
+  return (await tryUpload(drive)) === 'uploaded';
+}
+
+/**
+ * Retry every fleet-stamped drive that has not reached the backend yet.
+ * Stops at the first transient failure (offline: the rest would fail too), but
+ * steps past a drive the server rejected so it cannot block the ones behind it.
+ */
 export async function flushPendingUploads(): Promise<void> {
   const pending = useRecentsStore
     .getState()
     .drives.filter((d) => d.status === 'completed' && d.fleetId && d.uploadedAt == null);
   for (const drive of pending) {
-    if (!(await uploadDrive(drive))) break; // offline or rejected — try again next launch
+    if ((await tryUpload(drive)) === 'retry') break;
   }
+}
+
+let syncing: Promise<void> | null = null;
+
+/**
+ * Everything the phone owes the fleet service, in order: check the membership
+ * is still valid, then send drives waiting to upload. Safe to call often; calls
+ * made while one is running share it.
+ */
+export function syncFleet(): Promise<void> {
+  if (!syncing) {
+    syncing = (async () => {
+      try {
+        await syncMembership();
+        await flushPendingUploads();
+      } finally {
+        syncing = null;
+      }
+    })();
+  }
+  return syncing;
 }
 
 const LIVE_MIN_INTERVAL_MS = 5000;

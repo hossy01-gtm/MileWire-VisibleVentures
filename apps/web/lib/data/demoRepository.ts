@@ -6,12 +6,11 @@ const wait = <T,>(v: T) => new Promise<T>((r) => setTimeout(() => r(v), 60));
 
 /** In-memory backend for demo mode. State resets on reload. */
 function createDemoRepository(): FleetRepository {
-  const now = Date.now();
   let fleets: Fleet[] = [DEMO_FLEET];
   let members: Member[] = [...DEMO_MEMBERS];
   let vehicles: Vehicle[] = [...DEMO_VEHICLES];
-  let assignments: Assignment[] = buildDemoAssignments(now);
-  const drives = buildDemoDrives(now);
+  let assignments: Assignment[] = buildDemoAssignments();
+  const drives = buildDemoDrives();
   let seq = 100;
 
   // Drop the heavy fields the list views never need.

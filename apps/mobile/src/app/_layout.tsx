@@ -2,12 +2,12 @@ import { DarkTheme, Slot, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { Journey } from '@/journey/Journey';
 import { MapUnderlay } from '@/journey/MapUnderlay';
-import { flushPendingUploads } from '@/services/fleet/fleetService';
+import { syncFleet } from '@/services/fleet/fleetService';
 import { useRecentsStore } from '@/services/recents/recentsStore';
 import { useSettingsStore } from '@/services/settings/settingsStore';
 
@@ -43,10 +43,15 @@ export default function RootLayout() {
       // A drive still "active" at cold start was cut short by a crash or force-quit.
       useRecentsStore.getState().sealInterrupted();
       await SplashScreen.hideAsync();
-      void flushPendingUploads();
+      void syncFleet();
     })();
+    // A manager can remove a driver while the app is backgrounded; check again on return.
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && useSettingsStore.persist.hasHydrated()) void syncFleet();
+    });
     return () => {
       cancelled = true;
+      sub.remove();
     };
   }, []);
 

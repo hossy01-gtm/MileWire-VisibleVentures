@@ -77,22 +77,27 @@ export const DEMO_VEHICLES: Vehicle[] = [
   { id: "veh-3", fleetId: DEMO_FLEET.id, label: "Truck 3", licensePlate: null, baselineOdometerKm: 90312.3, baselineEffectiveAt: Date.UTC(2026, 9, 1) },
 ];
 
-/** "Now" for the demo is real time; seed history relative to the current day. */
-export function buildDemoDrives(now: number): DriveDetail[] {
+/** The demo fleet's recorded history: 1 to 16 November 2026 (both days included). */
+export const DEMO_RANGE = { startDay: Date.UTC(2026, 10, 1), days: 16 } as const;
+
+/**
+ * Sample history, pinned to DEMO_RANGE so it reads the same on any day.
+ * Drives start between 13:00 and 22:59 UTC (8 am to 6 pm in Toronto), so each
+ * stays inside its calendar day in both UTC and North American time zones.
+ */
+export function buildDemoDrives(): DriveDetail[] {
   const rand = mulberry32(20261111);
   const routes = Object.values(ROUTES);
   const drives: DriveDetail[] = [];
   const day = 86_400_000;
-  const startOfToday = new Date(new Date(now).setHours(0, 0, 0, 0)).getTime();
   let n = 0;
-  for (let d = 0; d < 45; d++) {
+  for (let d = 0; d < DEMO_RANGE.days; d++) {
     for (const m of DEMO_MEMBERS) {
       if (rand() < 0.45) continue;
       const route = routes[Math.floor(rand() * routes.length)];
       const forward = rand() > 0.5;
       const wp = forward ? route : [...route].reverse();
-      const start = startOfToday - d * day + (7 + Math.floor(rand() * 11)) * 3_600_000 + Math.floor(rand() * 50) * 60_000;
-      if (start > now - 20 * 60_000) continue;
+      const start = DEMO_RANGE.startDay + d * day + (13 + Math.floor(rand() * 10)) * 3_600_000 + Math.floor(rand() * 50) * 60_000;
       const path = buildPath(wp, start, 9 + rand() * 7, rand);
       let dist = 0, max = 0, moving = 0;
       for (let i = 1; i < path.length; i++) {
@@ -131,12 +136,14 @@ export function buildDemoDrives(now: number): DriveDetail[] {
   return drives.sort((a, b) => b.startedAt - a.startedAt);
 }
 
-export function buildDemoAssignments(now: number): Assignment[] {
-  const day = 86_400_000;
+/** Vehicle windows, fixed in time: Van 12 changes hands on 8 November, inside DEMO_RANGE. */
+export function buildDemoAssignments(): Assignment[] {
+  const handover = Date.UTC(2026, 10, 8);
+  const since = DEMO_FLEET.createdAt;
   return [
-    { id: "as-1", fleetId: DEMO_FLEET.id, vehicleId: "veh-12", userId: "drv-dana", assignedAt: now - 30 * day, unassignedAt: now - 12 * day },
-    { id: "as-2", fleetId: DEMO_FLEET.id, vehicleId: "veh-12", userId: "drv-omar", assignedAt: now - 12 * day, unassignedAt: null },
-    { id: "as-3", fleetId: DEMO_FLEET.id, vehicleId: "veh-7", userId: "drv-priya", assignedAt: now - 30 * day, unassignedAt: null },
+    { id: "as-1", fleetId: DEMO_FLEET.id, vehicleId: "veh-12", userId: "drv-dana", assignedAt: since, unassignedAt: handover },
+    { id: "as-2", fleetId: DEMO_FLEET.id, vehicleId: "veh-12", userId: "drv-omar", assignedAt: handover, unassignedAt: null },
+    { id: "as-3", fleetId: DEMO_FLEET.id, vehicleId: "veh-7", userId: "drv-priya", assignedAt: since, unassignedAt: null },
   ];
 }
 
