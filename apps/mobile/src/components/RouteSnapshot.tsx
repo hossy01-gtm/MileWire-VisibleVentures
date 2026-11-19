@@ -42,7 +42,7 @@ export function RouteSnapshot({ path, size = ROUTE_SNAPSHOT_SIZE }: Props) {
                 width: s.length + LINE, // overhang so round ends overlap into a smooth join
                 height: LINE,
                 borderRadius: LINE / 2,
-                backgroundColor: Colors.primary,
+                backgroundColor: Colors.accent,
                 transform: [{ rotate: `${s.angle}rad` }],
               }}
             />
@@ -75,6 +75,6 @@ const styles = StyleSheet.create({
     height: DOT,
     borderRadius: DOT / 2,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: Colors.mapCasing,
   },
 });

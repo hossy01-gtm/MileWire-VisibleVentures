@@ -9,6 +9,15 @@ export function pathToLine(path: readonly PathPoint[]) {
   };
 }
 
+/** A single point as GeoJSON ([lon, lat]). */
+export function pointFeature(lon: number, lat: number) {
+  return {
+    type: 'Feature' as const,
+    properties: {},
+    geometry: { type: 'Point' as const, coordinates: [lon, lat] },
+  };
+}
+
 /** Start and end markers for a finished path. */
 export function endpoints(path: readonly PathPoint[]) {
   const pts = path.length > 1 ? [path[0], path[path.length - 1]] : path.length === 1 ? [path[0]] : [];

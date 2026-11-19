@@ -17,7 +17,7 @@ type Props = {
 };
 
 /** Glass "back to my position" button. */
-export function RecenterButton({ onPress, following = false, testID = 'recenter', label = 'Recenter map', color = Colors.primary }: Props) {
+export function RecenterButton({ onPress, following = false, testID = 'recenter', label = 'Recenter map', color = Colors.accent }: Props) {
   return (
     <GlassSurface radius={CONTROL_SIZE / 2} style={styles.fab}>
       <Pressable
@@ -35,5 +35,5 @@ export function RecenterButton({ onPress, following = false, testID = 'recenter'
 const styles = StyleSheet.create({
   fab: { width: CONTROL_SIZE, height: CONTROL_SIZE },
   press: { flex: 1, borderRadius: CONTROL_SIZE / 2, alignItems: 'center', justifyContent: 'center' },
-  pressed: { backgroundColor: 'rgba(255,255,255,0.94)' },
+  pressed: { backgroundColor: Colors.glassLens },
 });

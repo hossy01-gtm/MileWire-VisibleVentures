@@ -184,9 +184,9 @@ const styles = StyleSheet.create({
   segmentRow: { padding: 12, gap: 10 },
   segment: { flexDirection: 'row', backgroundColor: Colors.surfaceSelected, borderRadius: Radius.sm, padding: 3 },
   segmentItem: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: Radius.sm - 2 },
-  segmentOn: { backgroundColor: Colors.background },
+  segmentOn: { backgroundColor: Colors.control },
   segmentText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
-  segmentTextOn: { color: Colors.primary },
+  segmentTextOn: { color: Colors.accent },
   about: { padding: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.border },
   aboutText: { fontSize: 13, lineHeight: 19, color: Colors.textSecondary },
 });

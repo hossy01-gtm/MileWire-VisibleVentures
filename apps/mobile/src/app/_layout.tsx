@@ -1,4 +1,4 @@
-import { DefaultTheme, Slot, ThemeProvider } from 'expo-router';
+import { DarkTheme, Slot, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -13,11 +13,11 @@ import { useSettingsStore } from '@/services/settings/settingsStore';
 
 void SplashScreen.preventAutoHideAsync();
 
-/** The app is light-only: React Navigation never switches to a dark theme. */
+/** The app is dark-only: React Navigation never switches to a light theme. */
 const MileWireTheme = {
-  ...DefaultTheme,
+  ...DarkTheme,
   colors: {
-    ...DefaultTheme.colors,
+    ...DarkTheme.colors,
     primary: Colors.primary,
     background: Colors.background,
     card: Colors.background,
@@ -52,7 +52,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={MileWireTheme}>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       {/* One map under everything; the journey floats above it. */}
       <View style={styles.root}>
         <MapUnderlay />

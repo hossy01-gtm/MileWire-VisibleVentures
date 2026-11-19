@@ -63,16 +63,16 @@ const variantStyles: Record<
   secondary: {
     container: { backgroundColor: Colors.primarySoft },
     pressed: { backgroundColor: Colors.surfaceSelected },
-    textColor: Colors.primary,
+    textColor: Colors.accent,
   },
   danger: {
-    container: { backgroundColor: Colors.danger },
-    pressed: { backgroundColor: '#8F1D17' },
-    textColor: '#FFFFFF',
+    container: { backgroundColor: Colors.dangerSolid },
+    pressed: { backgroundColor: Colors.dangerPressed },
+    textColor: Colors.onPrimary,
   },
   ghost: {
     container: { backgroundColor: 'transparent' },
     pressed: { backgroundColor: Colors.surface },
-    textColor: Colors.primary,
+    textColor: Colors.accent,
   },
 };

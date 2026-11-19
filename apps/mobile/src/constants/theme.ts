@@ -1,10 +1,12 @@
 /**
- * MileWire mobile theme. Light mode only — the app never follows the system
- * dark setting (`userInterfaceStyle: "light"` in app.json).
+ * MileWire mobile theme. Dark mode only: the app never follows the system
+ * appearance (`userInterfaceStyle: "dark"` in app.json) and the map is always the
+ * dark basemap.
  *
  * Bronze is the primary colour. `primary` is the darker 600 step so white text
- * on buttons clears WCAG AA (≈4.7:1); `brand` is the true bronze for accents,
- * map lines and the logo.
+ * on filled buttons clears WCAG AA (≈4.7:1); `accent` is the lighter 400 step
+ * for text, icons and map lines on dark surfaces; `brand` is the true bronze
+ * for dots and the logo.
  */
 import { Platform } from 'react-native';
 
@@ -25,20 +27,44 @@ export const Colors = {
   primaryPressed: Bronze[700],
   onPrimary: '#FFFFFF',
   brand: Bronze[500],
-  primarySoft: Bronze[100],
+  accent: Bronze[400],
+  primarySoft: '#3A2813',
 
-  background: '#FFFFFF',
-  surface: '#FAF7F2',
-  surfaceSelected: '#F1EAE0',
-  border: '#E8E0D5',
+  background: '#121010',
+  surface: '#1A1613',
+  surfaceSelected: '#271F19',
+  border: '#2F2720',
 
-  text: '#1C1612',
-  textSecondary: '#6B6259',
-  textTertiary: '#9A9086',
+  text: '#F5EFE8',
+  textSecondary: '#ADA398',
+  textTertiary: '#7D7368',
 
-  success: '#2E7D4F',
-  warning: '#B26A00',
-  danger: '#B3261E',
+  success: '#4CAF7A',
+  warning: '#E0A03A',
+  danger: '#F2766E',
+  /** Filled danger button (white text on it clears AA). */
+  dangerSolid: '#B3261E',
+  dangerPressed: '#8F1D17',
+  dangerSoft: 'rgba(242,118,110,0.18)',
+
+  /** Floating map chrome (the fallback where iOS glass is unavailable). */
+  glass: 'rgba(30,25,21,0.94)',
+  glassBorder: 'rgba(255,255,255,0.10)',
+  /** The selected-segment lens and pressed state on glass. */
+  glassLens: 'rgba(255,255,255,0.16)',
+  /** Neutral icon colour on glass. */
+  glyph: 'rgba(245,239,232,0.85)',
+  separator: 'rgba(255,255,255,0.18)',
+  sheet: 'rgba(22,18,15,0.97)',
+  sheetHandle: 'rgba(255,255,255,0.28)',
+  /** Round buttons on a sheet. */
+  control: '#2A221B',
+  controlBorder: 'rgba(255,255,255,0.14)',
+  /** Banner behind a warning cue. */
+  warningSoft: 'rgba(224,160,58,0.18)',
+  /** Casing around lines and dots drawn on the map. */
+  mapCasing: '#121010',
+  shadow: '#000000',
 } as const;
 
 export type ThemeColor = keyof typeof Colors;

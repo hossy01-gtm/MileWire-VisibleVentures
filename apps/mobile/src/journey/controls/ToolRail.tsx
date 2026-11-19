@@ -3,6 +3,7 @@ import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 
 import { GlassSurface } from '@/components/GlassSurface';
 import { Icon } from '@/components/Icon';
+import { Colors } from '@/constants/theme';
 
 import type { RailTool } from '../sheetNav';
 import { CONTROL_SIZE, GLYPH } from './chrome';
@@ -105,9 +106,9 @@ const styles = StyleSheet.create({
     width: SEGMENT,
     height: SEGMENT,
     borderRadius: SEGMENT / 2,
-    backgroundColor: 'rgba(255,255,255,0.94)',
+    backgroundColor: Colors.glassLens,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(0,0,0,0.06)',
+    borderColor: Colors.glassBorder,
   },
   button: { width: SEGMENT, height: SEGMENT, borderRadius: SEGMENT / 2, alignItems: 'center', justifyContent: 'center' },
 });

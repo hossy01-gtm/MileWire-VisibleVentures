@@ -106,4 +106,20 @@ describe('SimulatedGps', () => {
     advance();
     expect(seen).toContain('playing');
   });
+
+  it('observers see the position without keeping the clock running', () => {
+    const setTimer = vi.fn(() => 'h');
+    const gps = new SimulatedGps({ intervalMs: 1000, speedMps: 20, accelMps2: 3, setTimer, clearTimer: () => undefined });
+    const seen: Fix[] = [];
+    const off = gps.observe((f) => seen.push(f));
+    gps.load(ROUTE, 'playing');
+    expect(seen).toHaveLength(1); // the start position, as soon as the route loads
+    expect(seen[0]).toMatchObject({ lat: 43.0, lon: -79.0 });
+    expect(setTimer).not.toHaveBeenCalled(); // no GPS consumer: not moving
+    gps.rewind();
+    expect(seen).toHaveLength(2);
+    off();
+    gps.rewind();
+    expect(seen).toHaveLength(2);
+  });
 });

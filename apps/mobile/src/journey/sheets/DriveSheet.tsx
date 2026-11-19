@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   sub: { fontSize: 14, color: Colors.textSecondary },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   sync: { backgroundColor: Colors.primarySoft, borderRadius: Radius.md, padding: 14, gap: 10 },
-  syncText: { color: Colors.primary, fontWeight: '600', fontSize: 14 },
+  syncText: { color: Colors.accent, fontWeight: '600', fontSize: 14 },
   retry: { minHeight: 40 },
   meta: { fontSize: 12, color: Colors.textTertiary, textAlign: 'center' },
 });

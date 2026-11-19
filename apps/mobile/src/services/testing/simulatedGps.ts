@@ -46,6 +46,7 @@ export class SimulatedGps {
   private status: SimStatus = 'idle';
   private readonly listeners = new Set<FixListener>();
   private readonly snapshotListeners = new Set<SnapshotListener>();
+  private readonly observers = new Set<FixListener>();
   private timer: unknown = null;
   private opts: SimulatedGpsOptions;
 
@@ -60,6 +61,7 @@ export class SimulatedGps {
     this.status = status;
     this.reschedule();
     this.notify();
+    this.emitToObservers();
   }
 
   configure(opts: Partial<SimulatedGpsOptions>): void {
@@ -119,6 +121,17 @@ export class SimulatedGps {
     this.status = 'paused';
     this.reschedule();
     this.notify();
+    this.emitToObservers();
+  }
+
+  /**
+   * Watch the position without being a GPS consumer: observers get every fix
+   * (and a fix whenever the route is loaded or rewound) but do not keep the
+   * clock running. The map uses this to show where the simulated phone is.
+   */
+  observe(listener: FixListener): () => void {
+    this.observers.add(listener);
+    return () => void this.observers.delete(listener);
   }
 
   subscribe(listener: FixListener): () => void {
@@ -159,6 +172,11 @@ export class SimulatedGps {
     const fix = this.currentFix();
     if (fix) for (const listener of [...this.listeners]) listener(fix);
     this.notify();
+    this.emitToObservers(fix);
+  }
+
+  private emitToObservers(fix = this.currentFix()): void {
+    if (fix) for (const observer of [...this.observers]) observer(fix);
   }
 
   private notify(): void {

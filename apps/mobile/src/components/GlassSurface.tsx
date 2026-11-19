@@ -2,7 +2,9 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import type { ReactNode } from 'react';
 import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-/** Real iOS glass where the system has it; a translucent white card elsewhere. */
+import { Colors } from '@/constants/theme';
+
+/** Real iOS glass where the system has it; a translucent dark card elsewhere. */
 const HAS_GLASS = (() => {
   if (Platform.OS !== 'ios') return false;
   try {
@@ -28,7 +30,7 @@ export function GlassSurface({ radius = 26, style, children }: Props) {
   if (HAS_GLASS) {
     return (
       <View style={[shape, style]}>
-        <GlassView style={[StyleSheet.absoluteFill, shape]} glassEffectStyle="regular" colorScheme="light" />
+        <GlassView style={[StyleSheet.absoluteFill, shape]} glassEffectStyle="regular" colorScheme="dark" />
         {children}
       </View>
     );
@@ -42,10 +44,10 @@ export function GlassSurface({ radius = 26, style, children }: Props) {
 
 const styles = StyleSheet.create({
   fallback: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
+    backgroundColor: Colors.glass,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(0,0,0,0.08)',
-    shadowColor: '#000',
+    borderColor: Colors.glassBorder,
+    shadowColor: Colors.shadow,
     shadowOpacity: 0.14,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
