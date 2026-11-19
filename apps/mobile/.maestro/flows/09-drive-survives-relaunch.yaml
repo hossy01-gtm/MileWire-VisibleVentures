@@ -1,0 +1,17 @@
+# Journey: drives and unit choice are stored on the phone and survive a cold start.
+appId: app.milewire.mobile
+tags: [persistence]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: 'Miles'
+- runFlow: ../subflows/close-sheet.yaml
+- runFlow: ../subflows/record-drive.yaml
+- runFlow: ../subflows/close-sheet.yaml
+- runFlow: ../subflows/relaunch.yaml
+- runFlow: ../subflows/open-recents.yaml
+- assertVisible: 'Drive at .* mi'
+- runFlow: ../subflows/close-sheet.yaml
+- runFlow: ../subflows/open-settings.yaml
+# The segmented control remembers Miles: the drive row above was in mi.
+- assertVisible: 'Miles'

@@ -1,0 +1,44 @@
+# Journey: start a drive by holding the pill, watch it run, stop it, land on the review.
+appId: app.milewire.mobile
+tags: [smoke, track]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- runFlow: ../subflows/start-drive.yaml
+# In-drive kit: status card, dock, side rail. Idle controls are gone.
+- assertVisible: 'Recording route and bumps'
+- assertVisible: 'Distance .*'
+- assertVisible: 'Avg speed .*'
+- assertVisible: 'Bumps [0-9]+'
+- assertVisible:
+    id: 'recenter'
+- assertNotVisible:
+    id: 'track-pill'
+- assertNotVisible:
+    id: 'open-settings'
+# The simulated phone is moving: distance leaves 0.0 km.
+- runFlow: ../subflows/wait-for-distance.yaml
+# "Keep going" dismisses the dialog and the drive carries on.
+- tapOn:
+    id: 'stop-track'
+- assertVisible: 'Stop tracking\?'
+- assertVisible: 'Your drive will be saved to Recents.'
+- tapOn: 'Keep going'
+- assertVisible: 'Tracking'
+- assertVisible:
+    id: 'stop-track'
+# Now really stop.
+- runFlow: ../subflows/stop-drive.yaml
+- assertVisible: 'Distance: .*'
+- assertVisible: 'Duration: .*'
+# The rest of the review is below the fold at the peek detent.
+- runFlow: ../subflows/scroll-sheet-down.yaml
+- assertVisible: 'Top speed: .*'
+- assertVisible: 'Bumps: .*'
+- assertVisible: '[0-9]+ GPS fixes.*'
+- assertVisible: 'Delete drive'
+- assertNotVisible:
+    id: 'stop-track'
+# Closing the review returns to the idle map.
+- runFlow: ../subflows/close-sheet.yaml
+- assertVisible:
+    id: 'track-pill'

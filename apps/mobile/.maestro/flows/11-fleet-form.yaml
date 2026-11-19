@@ -1,0 +1,29 @@
+# Journey: the Join a fleet form, up to (not including) the network call.
+appId: app.milewire.mobile
+tags: [fleet]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: 'Join a fleet'
+- assertVisible: 'Join a fleet'
+- assertVisible: 'Enter the code your fleet manager gave you.*'
+- assertVisible: 'Join code'
+- assertVisible: 'Your name'
+# The button stays disabled until the code has 4+ characters and the name 2+.
+- assertVisible:
+    text: 'Join fleet'
+    enabled: false
+- tapOn: 'e.g. K7QM2X'
+- inputText: 'ab'
+- tapOn: 'Name your manager will see'
+- inputText: 'Pat'
+- assertVisible:
+    text: 'Join fleet'
+    enabled: false
+# The code is upper-cased and stripped of punctuation as it is typed.
+- tapOn: 'AB'
+- inputText: 'c-d!'
+- assertVisible: 'ABCD'
+- assertVisible:
+    text: 'Join fleet'
+    enabled: true

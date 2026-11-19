@@ -1,0 +1,18 @@
+# Journey: the app is killed mid-drive. The drive was saved at its start, and at the next
+# cold start it is sealed and listed in Recents rather than lost.
+appId: app.milewire.mobile
+tags: [persistence, track]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- runFlow: ../subflows/start-drive.yaml
+- runFlow: ../subflows/wait-for-distance.yaml
+- stopApp
+- runFlow: ../subflows/relaunch.yaml
+# Cold start sealed the drive, so the app is idle again (no stuck in-drive kit).
+- assertVisible:
+    id: 'track-pill'
+- assertNotVisible:
+    id: 'stop-track'
+- runFlow: ../subflows/open-recents.yaml
+- assertNotVisible: 'No drives yet'
+- assertVisible: 'Drive at .*'

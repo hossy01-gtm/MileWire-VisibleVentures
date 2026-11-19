@@ -1,0 +1,10 @@
+# Maestro workspace config for the MileWire mobile app.
+#   maestro test .maestro                    -> the default suite (offline, writes nothing to Supabase)
+#   maestro test .maestro --include-tags fleet-write -e JOIN_CODE=XXXXXX   -> opt-in fleet join/leave
+flows:
+  - flows/*
+excludeTags:
+  - network      # talks to the Supabase project the app was built against
+  - fleet-write  # joins a real fleet; needs -e JOIN_CODE
+executionOrder:
+  continueOnFailure: true

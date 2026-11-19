@@ -1,0 +1,10 @@
+# Stop through the confirmation dialog; lands on the finished drive (Drive sheet over the route).
+appId: app.milewire.mobile
+---
+- tapOn:
+    id: 'stop-track'
+- assertVisible: 'Stop tracking\?'
+- tapOn: 'Stop'
+- extendedWaitUntil:
+    visible: 'Distance: .*'
+    timeout: 15000

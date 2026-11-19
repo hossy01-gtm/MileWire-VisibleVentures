@@ -1,0 +1,9 @@
+# Fresh install state with location allowed ("inuse": Maestro 2.7.0 on iOS takes inuse/always/never, not allow/deny), then open the dev build against the local Metro server.
+# Point at another Metro with: -e METRO_URL=http%3A%2F%2F192.168.1.5%3A8081
+appId: app.milewire.mobile
+---
+- launchApp:
+    clearState: true
+    permissions:
+      location: inuse
+- runFlow: open-dev-client.yaml

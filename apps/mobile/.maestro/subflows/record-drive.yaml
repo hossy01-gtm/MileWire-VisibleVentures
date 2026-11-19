@@ -1,0 +1,7 @@
+# One complete short drive, left open on its review sheet.
+appId: app.milewire.mobile
+---
+- runFlow: start-drive.yaml
+# Wait for the simulated phone to cover some ground before stopping.
+- runFlow: wait-for-distance.yaml
+- runFlow: stop-drive.yaml

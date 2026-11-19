@@ -1,0 +1,48 @@
+# Journey: everything on the Settings sheet that works without a network.
+appId: app.milewire.mobile
+tags: [settings]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- runFlow: ../subflows/open-settings.yaml
+- assertVisible: 'Location, On'
+- assertVisible: 'Motion sensors.*'
+- assertVisible: 'Distance'
+- assertVisible: 'Join a fleet'
+- assertVisible: 'Clear all drives.*'
+
+# Units: Miles. A new drive's review shows miles. (Bump counts are not asserted: the simulator has
+# no motion sensor.)
+- tapOn: 'Miles'
+- assertVisible:
+    text: 'Miles'
+    selected: true
+- runFlow: ../subflows/close-sheet.yaml
+- runFlow: ../subflows/record-drive.yaml
+- assertVisible: 'Distance: .* mi'
+- runFlow: ../subflows/close-sheet.yaml
+
+# Back to Kilometres.
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: 'Kilometres'
+- assertVisible:
+    text: 'Kilometres'
+    selected: true
+
+# Clear all: Cancel keeps the drive, Clear removes it.
+- tapOn: 'Clear all drives.*'
+- assertVisible: 'Clear all drives\?'
+- assertVisible: 'Every drive on this phone will be removed.*'
+- tapOn: 'Cancel'
+- tapOn: 'Clear all drives.*'
+- tapOn: 'Clear'
+- runFlow: ../subflows/close-sheet.yaml
+- runFlow: ../subflows/open-recents.yaml
+- assertVisible: 'No drives yet'
+- runFlow: ../subflows/close-sheet.yaml
+
+# About sits below the fold at the sheet's peek height, so scroll to it last.
+- runFlow: ../subflows/open-settings.yaml
+- scrollUntilVisible:
+    element: 'Version.*'
+    direction: DOWN
+    timeout: 15000

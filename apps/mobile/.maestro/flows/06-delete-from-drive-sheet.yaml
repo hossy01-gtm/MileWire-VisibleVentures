@@ -1,0 +1,18 @@
+# Journey: delete a finished drive straight from its review sheet.
+appId: app.milewire.mobile
+tags: [recents]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- runFlow: ../subflows/record-drive.yaml
+- runFlow: ../subflows/scroll-sheet-down.yaml
+- tapOn: 'Delete drive'
+- assertVisible: 'Delete this drive\?'
+- assertVisible: 'It will be removed from this phone.'
+- tapOn: 'Delete'
+# From a just-finished drive Back closes the sheet.
+- extendedWaitUntil:
+    visible:
+      id: 'track-pill'
+    timeout: 8000
+- runFlow: ../subflows/open-recents.yaml
+- assertVisible: 'No drives yet'

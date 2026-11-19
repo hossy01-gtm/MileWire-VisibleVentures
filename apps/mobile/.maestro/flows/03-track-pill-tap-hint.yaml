@@ -1,0 +1,24 @@
+# Journey: a quick tap never starts a drive (it only shows a hint: press and hold).
+# The pill's subtitle is not exposed to the accessibility tree, so this asserts the behaviour:
+# after a tap the app is still idle and the in-drive controls never appear.
+appId: app.milewire.mobile
+tags: [smoke, track]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- tapOn:
+    id: 'track-pill'
+- waitForAnimationToEnd
+- assertNotVisible: 'Tracking'
+- assertNotVisible:
+    id: 'stop-track'
+- assertVisible:
+    id: 'track-pill'
+- assertVisible:
+    id: 'open-settings'
+# Still idle a few seconds later (the hint timer also fades out).
+- extendedWaitUntil:
+    notVisible:
+      id: 'stop-track'
+    timeout: 4000
+- assertVisible:
+    id: 'track-pill'

@@ -1,0 +1,8 @@
+# Cold start that keeps the phone's stored drives and settings (clearState is NOT used).
+appId: app.milewire.mobile
+---
+- stopApp
+- launchApp:
+    permissions:
+      location: inuse
+- runFlow: open-dev-client.yaml

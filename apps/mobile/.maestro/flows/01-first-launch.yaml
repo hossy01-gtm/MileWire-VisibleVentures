@@ -1,0 +1,17 @@
+# Journey: a new driver opens the app with location allowed.
+appId: app.milewire.mobile
+tags: [smoke, map]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- assertVisible:
+    id: 'open-recents'
+- assertVisible:
+    id: 'open-settings'
+- assertVisible:
+    id: 'track-pill'
+- assertVisible: 'Track mode'
+# Idle map has none of the in-drive controls.
+- assertNotVisible:
+    id: 'stop-track'
+- assertNotVisible:
+    id: 'tool-sheet'

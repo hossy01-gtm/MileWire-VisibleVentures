@@ -1,0 +1,50 @@
+# Journey: the rail opens and closes sheets; switching tools swaps the sheet.
+appId: app.milewire.mobile
+tags: [smoke, navigation]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+# A rail button toggles its own sheet.
+- tapOn:
+    id: 'open-settings'
+- assertVisible: 'Permissions'
+- tapOn:
+    id: 'open-settings'
+- extendedWaitUntil:
+    notVisible:
+      id: 'tool-sheet'
+    timeout: 5000
+# Switching from one tool to the other.
+- tapOn:
+    id: 'open-recents'
+- assertVisible: 'No drives yet'
+- tapOn:
+    id: 'open-settings'
+- assertVisible: 'Permissions'
+# Fleet is a child of Settings: Back goes to Settings, Close goes to the map.
+- tapOn: 'Join a fleet'
+- assertVisible:
+    id: 'sheet-back'
+- tapOn:
+    id: 'sheet-back'
+- assertVisible: 'Permissions'
+- tapOn: 'Join a fleet'
+- runFlow: ../subflows/close-sheet.yaml
+- assertVisible:
+    id: 'track-pill'
+# Dragging the sheet up to its full detent hides the rail; flicking down closes it.
+- tapOn:
+    id: 'open-recents'
+# The handle sits at about 42% down the screen at the peek detent and about 17% at the full detent.
+- swipe:
+    start: 50%, 42%
+    end: 50%, 6%
+    duration: 400
+- assertVisible: 'No drives yet'
+- swipe:
+    start: 50%, 18%
+    end: 50%, 98%
+    duration: 150
+- extendedWaitUntil:
+    notVisible:
+      id: 'tool-sheet'
+    timeout: 5000

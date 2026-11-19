@@ -1,0 +1,37 @@
+# Journey: Recents is empty, fills after a drive, opens a drive, and deletes it.
+appId: app.milewire.mobile
+tags: [recents]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- runFlow: ../subflows/open-recents.yaml
+- assertVisible: 'No drives yet'
+- assertVisible: 'Press and hold Track mode.*'
+- runFlow: ../subflows/close-sheet.yaml
+
+# Record a drive, then look it up in Recents.
+- runFlow: ../subflows/record-drive.yaml
+- runFlow: ../subflows/close-sheet.yaml
+- runFlow: ../subflows/open-recents.yaml
+- assertNotVisible: 'No drives yet'
+- assertVisible: 'Today'
+- assertVisible: 'Press and hold a drive to delete it.'
+- assertVisible: 'Drive at .*'
+
+# Open it: Drive sheet, and Back returns to Recents (not to the map).
+- tapOn: 'Drive at .*'
+- assertVisible: 'Distance: .*'
+- runFlow: ../subflows/scroll-sheet-down.yaml
+- assertVisible: 'Delete drive'
+- tapOn:
+    id: 'sheet-back'
+- assertVisible: 'Today'
+- assertNotVisible: 'Delete drive'
+
+# Long-press deletes after a confirmation; Cancel keeps it.
+- longPressOn: 'Drive at .*'
+- assertVisible: 'Delete this drive\?'
+- tapOn: 'Cancel'
+- assertVisible: 'Drive at .*'
+- longPressOn: 'Drive at .*'
+- tapOn: 'Delete'
+- assertVisible: 'No drives yet'

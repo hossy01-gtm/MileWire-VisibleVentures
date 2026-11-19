@@ -1,0 +1,6 @@
+appId: app.milewire.mobile
+---
+- tapOn:
+    id: 'open-recents'
+- assertVisible:
+    id: 'tool-sheet'

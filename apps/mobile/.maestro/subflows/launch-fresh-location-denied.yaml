@@ -1,0 +1,8 @@
+# Fresh install state with location denied, for the permission journey.
+appId: app.milewire.mobile
+---
+- launchApp:
+    clearState: true
+    permissions:
+      location: never
+- runFlow: open-dev-client.yaml

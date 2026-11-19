@@ -1,0 +1,21 @@
+# Journey: a wrong join code is refused with a clear message and nothing is joined.
+# NETWORK: asks the Supabase project the build points at, and creates an anonymous user there.
+# Excluded from the default run; use --include-tags network.
+appId: app.milewire.mobile
+tags: [fleet, network]
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: 'Join a fleet'
+- tapOn: 'e.g. K7QM2X'
+- inputText: 'ZZZZZZ'
+- tapOn: 'Name your manager will see'
+- inputText: 'Maestro Test'
+- hideKeyboard
+- tapOn: 'Join fleet'
+- extendedWaitUntil:
+    visible: 'No fleet matches that code.'
+    timeout: 20000
+# Still not a member: the form is showing, not the fleet card.
+- assertVisible: 'Join a fleet'
+- assertNotVisible: 'Share live location'

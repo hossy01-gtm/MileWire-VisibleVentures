@@ -1,0 +1,14 @@
+# Journey: the driver refuses location. The pill is replaced by a card explaining why it is needed.
+appId: app.milewire.mobile
+tags: [permissions]
+---
+- runFlow: ../subflows/launch-fresh-location-denied.yaml
+- assertVisible: 'Turn on location'
+- assertVisible: 'MileWire needs your location.*'
+# iOS will not ask twice, so the button sends the driver to system Settings.
+- assertVisible: '(Open settings|Allow location)'
+- assertNotVisible:
+    id: 'track-pill'
+# Settings still opens and reports the permission as off.
+- runFlow: ../subflows/open-settings.yaml
+- assertVisible: 'Location, Off.*'

@@ -1,0 +1,8 @@
+appId: app.milewire.mobile
+---
+- tapOn:
+    id: 'sheet-close'
+- extendedWaitUntil:
+    notVisible:
+      id: 'tool-sheet'
+    timeout: 5000

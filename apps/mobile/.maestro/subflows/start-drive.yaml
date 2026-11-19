@@ -1,0 +1,15 @@
+# Press and hold the Track pill. longPressOn holds for 3 s; the app starts at 2 s (HOLD_TO_TRACK_MS).
+# With config/testing.developer.json enabled the simulated phone sets off as soon as Track mode starts.
+appId: app.milewire.mobile
+---
+- longPressOn:
+    id: 'track-pill'
+- extendedWaitUntil:
+    visible: 'Tracking'
+    timeout: 15000
+- assertVisible:
+    id: 'stop-track'
+# The pill unmounts while Maestro is still "holding" it, and React Native then swallows the next
+# touch. One tap on empty map clears that, so the Stop tap that follows is not lost.
+- tapOn:
+    point: 50%,60%

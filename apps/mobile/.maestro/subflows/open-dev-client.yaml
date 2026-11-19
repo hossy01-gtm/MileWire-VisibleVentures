@@ -1,0 +1,16 @@
+# The app is a development build, so it opens on the Expo launcher until pointed at Metro.
+# The __expo_disable_* flags (the same ones the Expo CLI passes) stop the dev menu popup and floating Tools button from covering the map controls.
+appId: app.milewire.mobile
+env:
+  METRO_URL: http%3A%2F%2Flocalhost%3A8081
+---
+- openLink: exp+milewire://expo-development-client/?url=${METRO_URL}&__expo_disable_onboarding=1&__expo_disable_fab=1&__expo_disable_auto_launch=1
+- runFlow:
+    when:
+      visible: 'Open'
+    commands:
+      - tapOn: 'Open'
+- extendedWaitUntil:
+    visible:
+      id: 'open-settings'
+    timeout: 90000

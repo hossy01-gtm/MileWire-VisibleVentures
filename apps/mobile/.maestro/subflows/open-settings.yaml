@@ -1,0 +1,5 @@
+appId: app.milewire.mobile
+---
+- tapOn:
+    id: 'open-settings'
+- assertVisible: 'Permissions'

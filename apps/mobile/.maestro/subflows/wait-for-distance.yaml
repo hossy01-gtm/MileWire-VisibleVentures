@@ -1,0 +1,7 @@
+# Wait until the in-drive dock shows a non-zero distance. iOS exposes the dock tile as one label
+# ("Distance 0.5 km" / "Distance 0.5 mi"), so match the whole label in either unit.
+appId: app.milewire.mobile
+---
+- extendedWaitUntil:
+    visible: 'Distance (0\.[1-9]|[1-9][0-9]*\.[0-9]) (km|mi)'
+    timeout: 60000

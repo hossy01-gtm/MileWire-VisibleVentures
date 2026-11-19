@@ -1,0 +1,47 @@
+# Journey: join a fleet, drive, see the drive shared, leave.
+# FLEET-WRITE: joins a REAL fleet in the Supabase project the build points at and uploads a drive.
+# Use a test fleet, never the demo fleet. Run with:
+#   maestro test .maestro/flows/13-fleet-join-and-leave.yaml -e JOIN_CODE=XXXXXX -e FLEET_NAME="Your Fleet Name"
+appId: app.milewire.mobile
+tags: [fleet, fleet-write]
+env:
+  DRIVER_NAME: Maestro Driver
+---
+- runFlow: ../subflows/launch-fresh.yaml
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: 'Join a fleet'
+- tapOn: 'e.g. K7QM2X'
+- inputText: ${JOIN_CODE}
+- tapOn: 'Name your manager will see'
+- inputText: ${DRIVER_NAME}
+- hideKeyboard
+- tapOn: 'Join fleet'
+# Joining returns to Settings, which now shows the fleet and "Sharing".
+- extendedWaitUntil:
+    visible: '${FLEET_NAME}, Sharing'
+    timeout: 20000
+- runFlow: ../subflows/close-sheet.yaml
+- assertVisible: 'Drives shared with ${FLEET_NAME}'
+
+# A drive made as a member is stamped for the fleet and uploaded on Stop.
+- runFlow: ../subflows/start-drive.yaml
+- assertVisible: 'Sharing live with ${FLEET_NAME}'
+- runFlow: ../subflows/wait-for-distance.yaml
+- runFlow: ../subflows/stop-drive.yaml
+- runFlow: ../subflows/scroll-sheet-down.yaml
+- extendedWaitUntil:
+    visible: 'Shared with your fleet'
+    timeout: 30000
+- runFlow: ../subflows/close-sheet.yaml
+
+# Leave: Cancel keeps membership, Leave removes it.
+- runFlow: ../subflows/open-settings.yaml
+- tapOn: '${FLEET_NAME}, Sharing'
+- assertVisible: 'Share live location'
+- tapOn: 'Leave fleet'
+- assertVisible: 'Leave this fleet\?'
+- tapOn: 'Cancel'
+- assertVisible: 'Share live location'
+- tapOn: 'Leave fleet'
+- tapOn: 'Leave'
+- assertVisible: 'Join a fleet'
