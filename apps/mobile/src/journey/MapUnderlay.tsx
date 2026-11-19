@@ -89,9 +89,9 @@ export function MapUnderlay() {
       scaleBarEnabled={false}
       compassEnabled={false}
       pitchEnabled={false}
-      // The attribution button is hidden; the Mapbox logo stays, parked above the bottom chrome.
-      attributionEnabled={false}
-      logoPosition={{ left: 12, bottom: insets.bottom + 140 }}>
+      // Private test build: Mapbox's logo and attribution are hidden. Restore both before any public release.
+      logoEnabled={false}
+      attributionEnabled={false}>
       <Camera
         defaultSettings={{ centerCoordinate: DEFAULT_CENTER, zoomLevel: 3 }}
         followUserLocation={sim.mode === 'off' && !fit && following}
