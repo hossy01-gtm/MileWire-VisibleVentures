@@ -11,6 +11,7 @@ const DISABLED: TestConfig = {
   objective: 'default',
   showDevSettings: false,
   autoPlay: false,
+  playOnTrack: false,
   devTestValues: DEFAULT_DEV_TEST_VALUES,
 };
 
@@ -55,7 +56,8 @@ export function parseTestConfig(raw: unknown): TestConfig {
     objective: resolveObjective(file.objective, objectives),
     objectives,
     showDevSettings: file.showDevSettings === true,
-    autoPlay: file.autoPlay !== false,
+    autoPlay: file.autoPlay === true,
+    playOnTrack: file.playOnTrack !== false,
     devTestValues: mergeValues(file.devTestValues),
   };
 }

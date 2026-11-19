@@ -16,8 +16,9 @@ export type TestingDeps = {
  * Owns the simulation: which objective is selected, loading its GPX into the
  * simulated GPS, and the Play/Pause/Rewind controls a dev panel would call.
  * Nothing here needs a panel: with `enabled: true` in
- * `config/testing.developer.json` the first GPS listener loads the objective
- * and (unless `autoPlay: false`) starts the drive.
+ * `config/testing.developer.json` the first GPS listener loads the objective and
+ * parks the phone at its origin. The drive starts when Track mode starts
+ * (`beginDriveIfParked`), or straight away with `autoPlay: true`.
  */
 export class TestingManager {
   readonly gps: SimulatedGps;
@@ -89,6 +90,16 @@ export class TestingManager {
       this.loaded = previousLoad;
     }
     return ok;
+  }
+
+  /**
+   * Track mode just started. A phone parked at the origin (or one that has
+   * finished its drive) sets off; a drive the developer paused mid-route is left alone.
+   */
+  beginDriveIfParked(): void {
+    if (!this.deps.config.playOnTrack) return;
+    const { status, progress } = this.gps.getSnapshot();
+    if ((status === 'paused' && progress === 0) || status === 'ended') this.gps.play();
   }
 
   async currentFix(): Promise<Fix | null> {

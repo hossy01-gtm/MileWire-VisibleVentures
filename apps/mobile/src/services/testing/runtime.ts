@@ -48,8 +48,14 @@ export function getSimulatedFix(): Promise<Fix | null> {
 /**
  * Subscribe to simulated GPS. Resolves an unsubscribe function, or null when
  * simulation is off or failed to load, in which case the caller uses real GPS.
+ * `startsDrive` marks the Track mode watcher: it sets a parked phone off.
  */
-export async function watchSimulatedFixes(onFix: (fix: Fix) => void): Promise<(() => void) | null> {
+export async function watchSimulatedFixes(
+  onFix: (fix: Fix) => void,
+  opts: { startsDrive?: boolean } = {},
+): Promise<(() => void) | null> {
   if (!(await testingManager.ready())) return null;
-  return testingManager.gps.subscribe(onFix);
+  const stop = testingManager.gps.subscribe(onFix);
+  if (opts.startsDrive) testingManager.beginDriveIfParked();
+  return stop;
 }

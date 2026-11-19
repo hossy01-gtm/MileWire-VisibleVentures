@@ -8,9 +8,12 @@ Track mode, the auto-latch and the recorder can be exercised without driving.
 1. Copy `src/services/testing/templates/testing.developer.json` to
    `apps/mobile/config/testing.developer.json` (gitignored) and set `"enabled": true`
    and an `objective` (a `name` in `test-assets/developer/manifest.json`).
-2. Start the dev client (`npm run dev:mobile`). Open the map: the idle GPS watcher
-   subscribes, the simulated drive starts moving, the auto-latch fires at ~10 km/h
-   and Track mode records it. Stopping Track ends the recording; the sim keeps going.
+2. Start the dev client (`npm run dev:mobile`). The map opens on the route's origin and
+   the phone sits there, parked. Start Track mode yourself (hold the Track mode pill):
+   the simulated drive sets off and is recorded. Stopping Track ends the recording;
+   the sim keeps going to the end of the route.
+3. To test the auto-latch instead, set `"autoPlay": true`: the drive starts as soon as
+   the map listens for GPS and Track mode starts by itself at ~10 km/h.
 
 `enabled` must be exactly `true`; otherwise every other field is ignored. Nothing
 runs outside `__DEV__`, so release builds are unaffected. Location permission is
@@ -23,7 +26,8 @@ still required (the tracking session asks for it as usual).
 | `enabled` | Master switch. |
 | `objective` | Manifest objective to play; empty = first of `objectives`, else first manifest entry. |
 | `objectives` | Allow-list for a dev panel's picker. |
-| `autoPlay` | Default `true`: start as soon as something listens for GPS. `false` = load paused; call `useDevSimulationStore.getState().play()`. |
+| `autoPlay` | Default `false`. `true` = drive as soon as something listens for GPS, so the auto-latch starts Track mode on launch. |
+| `playOnTrack` | Default `true`. With `autoPlay` off, starting Track mode sets a parked (or finished) phone off. A drive paused mid-route is left alone. Panel: `useDevSimulationStore.getState().play()`. |
 | `showDevSettings` | For a future dev panel to read. Simulation never depends on it. |
 | `devTestValues` | `simulationIntervalMs` (1000), `simulationSpeedMps` (20), `simulationAccelMps2` (3). |
 

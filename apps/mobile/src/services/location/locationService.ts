@@ -83,7 +83,7 @@ export async function watchFixes(
   onFix: (fix: Fix) => void,
   onError?: (message: string) => void,
 ): Promise<LocationWatch> {
-  const stopSimulated = await watchSimulatedFixes(onFix);
+  const stopSimulated = await watchSimulatedFixes(onFix, { startsDrive: true });
   if (stopSimulated) return { stop: stopSimulated };
   const sub = await Location.watchPositionAsync(
     {

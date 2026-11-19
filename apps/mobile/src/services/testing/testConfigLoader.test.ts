@@ -21,9 +21,15 @@ describe('parseTestConfig', () => {
     expect(cfg.devTestValues).toEqual({ ...DEFAULT_DEV_TEST_VALUES, simulationSpeedMps: 30 });
   });
 
-  it('autoPlay defaults on and only an explicit false turns it off', () => {
-    expect(parseTestConfig({ enabled: true }).autoPlay).toBe(true);
-    expect(parseTestConfig({ enabled: true, autoPlay: false }).autoPlay).toBe(false);
+  it('does not start driving by itself unless autoPlay is exactly true', () => {
+    expect(parseTestConfig({ enabled: true }).autoPlay).toBe(false);
+    expect(parseTestConfig({ enabled: true, autoPlay: 'yes' }).autoPlay).toBe(false);
+    expect(parseTestConfig({ enabled: true, autoPlay: true }).autoPlay).toBe(true);
+  });
+
+  it('starts the drive with Track mode unless playOnTrack is false', () => {
+    expect(parseTestConfig({ enabled: true }).playOnTrack).toBe(true);
+    expect(parseTestConfig({ enabled: true, playOnTrack: false }).playOnTrack).toBe(false);
   });
 });
 

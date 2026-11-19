@@ -97,8 +97,10 @@ export function MapUnderlay() {
         followUserLocation={sim.mode === 'off' && !fit && following}
         centerCoordinate={sim.fix && !fit && following ? [sim.fix.lon, sim.fix.lat] : undefined}
         zoomLevel={sim.fix && !fit && following ? (live ? 16.5 : 15.5) : undefined}
-        heading={sim.fix && !fit && following ? (live ? (sim.fix.heading ?? 0) : 0) : undefined}
-        pitch={sim.fix && !fit && following ? (live ? 45 : 0) : undefined}
+        // Fitting a finished drive starts from a flat, north-up camera: a leftover live tilt
+        // (45°) and course heading would make the fit zoom far out.
+        heading={fit ? 0 : sim.fix && following ? (live ? (sim.fix.heading ?? 0) : 0) : undefined}
+        pitch={fit ? 0 : sim.fix && following ? (live ? 45 : 0) : undefined}
         followUserMode={live ? UserTrackingMode.FollowWithCourse : UserTrackingMode.Follow}
         followZoomLevel={live ? 16.5 : 15.5}
         followPitch={live ? 45 : 0}

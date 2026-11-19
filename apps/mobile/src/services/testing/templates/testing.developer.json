@@ -5,10 +5,11 @@
     "fisherville-to-fit4less"
   ],
   "showDevSettings": false,
-  "autoPlay": true,
+  "autoPlay": false,
   "devTestValues": {
     "simulationIntervalMs": 1000,
     "simulationSpeedMps": 20,
     "simulationAccelMps2": 3
-  }
+  },
+  "playOnTrack": true
 }

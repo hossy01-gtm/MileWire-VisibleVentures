@@ -9,8 +9,10 @@ export type TestingDeveloperConfigFile = {
   objectives?: string[];
   /** Whether a dev panel should be mounted. Simulation never depends on it. */
   showDevSettings?: boolean;
-  /** Start playing as soon as something listens for GPS. Default true. */
+  /** Start driving as soon as something listens for GPS (the auto-latch then starts Track mode by itself). Default false. */
   autoPlay?: boolean;
+  /** When autoPlay is off: start driving when Track mode is started. Default true. */
+  playOnTrack?: boolean;
   devTestValues?: Partial<DeveloperTestValues>;
 };
 
@@ -29,6 +31,7 @@ export type TestConfig = {
   objectives?: string[];
   showDevSettings: boolean;
   autoPlay: boolean;
+  playOnTrack: boolean;
   devTestValues: DeveloperTestValues;
 };
 

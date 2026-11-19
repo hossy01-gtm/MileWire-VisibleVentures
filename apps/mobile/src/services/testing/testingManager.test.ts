@@ -37,16 +37,45 @@ describe('TestingManager', () => {
     expect(await m.selectObjective('two')).toBe(false);
   });
 
-  it('loads the configured objective and starts playing (autoPlay)', async () => {
-    const m = make({ enabled: true, objective: 'one' });
+  it('loads the configured objective and starts playing with autoPlay', async () => {
+    const m = make({ enabled: true, objective: 'one', autoPlay: true });
     expect(await m.ready()).toBe(true);
     expect(m.gps.getSnapshot().status).toBe('playing');
     expect((await m.currentFix())!.lat).toBeCloseTo(43.0);
   });
 
-  it('autoPlay:false loads paused', async () => {
-    const m = make({ enabled: true, objective: 'one', autoPlay: false });
+  it('loads parked at the origin by default', async () => {
+    const m = make({ enabled: true, objective: 'one' });
     await m.ready();
+    expect(m.gps.getSnapshot()).toMatchObject({ status: 'paused', progress: 0 });
+    expect((await m.currentFix())!.speed).toBe(0);
+  });
+
+  it('Track mode sets a parked phone off, but not one paused mid-drive', async () => {
+    const m = make({ enabled: true, objective: 'one' });
+    await m.ready();
+    m.beginDriveIfParked();
+    expect(m.gps.getSnapshot().status).toBe('playing');
+
+    m.gps.tick();
+    m.gps.pause();
+    m.beginDriveIfParked(); // paused with progress > 0: the developer's choice stands
+    expect(m.gps.getSnapshot().status).toBe('paused');
+  });
+
+  it('Track mode restarts a finished drive', async () => {
+    const m = make({ enabled: true, objective: 'one', autoPlay: true });
+    await m.ready();
+    for (let i = 0; i < 200 && m.gps.getSnapshot().status !== 'ended'; i++) m.gps.tick();
+    expect(m.gps.getSnapshot().status).toBe('ended');
+    m.beginDriveIfParked();
+    expect(m.gps.getSnapshot()).toMatchObject({ status: 'playing', progress: 0 });
+  });
+
+  it('playOnTrack:false leaves the phone parked', async () => {
+    const m = make({ enabled: true, objective: 'one', playOnTrack: false });
+    await m.ready();
+    m.beginDriveIfParked();
     expect(m.gps.getSnapshot().status).toBe('paused');
   });
 
@@ -66,7 +95,7 @@ describe('TestingManager', () => {
 
   it('switches objective, keeping playback, and a failed switch keeps the old drive', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const m = make({ enabled: true, objective: 'one' });
+    const m = make({ enabled: true, objective: 'one', autoPlay: true });
     await m.ready();
     expect(await m.selectObjective('two')).toBe(true);
     expect(m.getObjective()).toBe('two');
