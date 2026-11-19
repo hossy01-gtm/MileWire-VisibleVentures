@@ -55,6 +55,12 @@ export const siteCopy = {
     ],
   },
 
+  lineup: {
+    eyebrow: "Any vehicle",
+    title: "Vans, trucks and cars report the same way",
+    lead: "Assign a driver to a vehicle and the history follows. MileWire tracks the driver's phone, so a mixed fleet does not need mixed hardware.",
+  },
+
   console: {
     eyebrow: "The console",
     title: "Everything a small fleet actually uses",
@@ -69,6 +75,21 @@ export const siteCopy = {
       { title: "Fleets and drivers", body: "Your roster, join code and recent activity in one place." },
     ],
     cta: { label: "Open the console", to: CONSOLE_HREF },
+    focus: {
+      title: "Replay a drive on a real 3D city",
+      body: "Scrub any recorded drive in 3D, with the route and bump markers laid over photorealistic city tiles where they are available, and plain terrain where they are not.",
+      modes: [
+        { name: "Orbit", note: "Circle the vehicle and look from any side." },
+        { name: "Chase", note: "Follow from behind, the way a driver sees the road ahead." },
+        { name: "In-car", note: "Ride along from the driver's seat." },
+      ],
+    },
+  },
+
+  charts: {
+    eyebrow: "Speed and motion",
+    title: "See what happened on every drive",
+    lead: "Speed, motion-sensor readings and bump markers for each trip, with distance per day across the fleet. These are the console's own charts, drawn from a sample fleet.",
   },
 
   why: {

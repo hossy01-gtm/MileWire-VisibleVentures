@@ -7,7 +7,7 @@ import type { JoltMark, MotionPoint, PathPoint } from "@/lib/types";
 const SEVERITY = { low: "#e0a030", medium: "#e8742b", high: "#e5584f" } as const;
 
 /** Speed over the drive, with bump ticks and a cursor for the replay position. */
-export function SpeedChart({ path, jolts, cursorMs, unit }: { path: PathPoint[]; jolts: JoltMark[]; cursorMs?: number; unit: DistanceUnit }) {
+export function SpeedChart({ path, jolts, cursorMs, unit, className = "h-28" }: { path: PathPoint[]; jolts: JoltMark[]; cursorMs?: number; unit: DistanceUnit; className?: string }) {
   if (path.length < 2) return null;
   const W = 800, H = 120, PAD = 4;
   const t0 = path[0][2];
@@ -19,7 +19,7 @@ export function SpeedChart({ path, jolts, cursorMs, unit }: { path: PathPoint[];
   const area = `${line} L${x(path[path.length - 1][2]).toFixed(1)},${H - PAD} L${x(t0).toFixed(1)},${H - PAD} Z`;
   return (
     <figure>
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-28 w-full" role="img" aria-label={`Speed over time, peak ${formatSpeed(top, unit)}`} preserveAspectRatio="none">
+      <svg viewBox={`0 0 ${W} ${H}`} className={`${className} w-full`} role="img" aria-label={`Speed over time, peak ${formatSpeed(top, unit)}`} preserveAspectRatio="none">
         <path d={area} fill="#cd7f32" opacity="0.15" />
         <path d={line} fill="none" stroke="#cd7f32" strokeWidth="2" vectorEffect="non-scaling-stroke" />
         {jolts.map((j, i) => (
@@ -37,13 +37,13 @@ export function SpeedChart({ path, jolts, cursorMs, unit }: { path: PathPoint[];
 }
 
 /** Distance per day as bars. */
-export function DailyBars({ data, unit }: { data: Array<{ day: string; distanceM: number; drives: number }>; unit: DistanceUnit }) {
+export function DailyBars({ data, unit, className = "h-36" }: { data: Array<{ day: string; distanceM: number; drives: number }>; unit: DistanceUnit; className?: string }) {
   const W = 800, H = 140, PAD = 6;
   const top = Math.max(1, ...data.map((d) => d.distanceM));
   const bw = (W - PAD * 2) / Math.max(1, data.length);
   return (
     <figure>
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-36 w-full" role="img" aria-label="Distance driven per day" preserveAspectRatio="none">
+      <svg viewBox={`0 0 ${W} ${H}`} className={`${className} w-full`} role="img" aria-label="Distance driven per day" preserveAspectRatio="none">
         {data.map((d, i) => {
           const h = (d.distanceM / top) * (H - PAD * 2);
           return (
@@ -69,7 +69,7 @@ const GYRO = "#7fb7d6";
  * scale, bronze) and peak rotation rate (right scale, blue), with the bump
  * threshold marked and a cursor for the replay position.
  */
-export function MotionChart({ motion, cursorAt }: { motion: MotionPoint[]; cursorAt?: number }) {
+export function MotionChart({ motion, cursorAt, className = "h-36" }: { motion: MotionPoint[]; cursorAt?: number; className?: string }) {
   if (motion.length < 2) return null;
   const W = 800, H = 140, PAD = 4;
   const t0 = motion[0][0];
@@ -83,7 +83,7 @@ export function MotionChart({ motion, cursorAt }: { motion: MotionPoint[]; curso
   const inRange = cursorAt != null && cursorAt >= t0 && cursorAt <= t0 + span;
   return (
     <figure>
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-36 w-full" role="img" aria-label={`Motion sensor readings, peak ${accelTop.toFixed(2)} g`} preserveAspectRatio="none">
+      <svg viewBox={`0 0 ${W} ${H}`} className={`${className} w-full`} role="img" aria-label={`Motion sensor readings, peak ${accelTop.toFixed(2)} g`} preserveAspectRatio="none">
         <line x1={PAD} x2={W - PAD} y1={yAccel(BUMP_THRESHOLD_G)} y2={yAccel(BUMP_THRESHOLD_G)} stroke="#6f675e" strokeWidth="1" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
         <path d={line((m) => m[2], yGyro)} fill="none" stroke={GYRO} strokeWidth="1.5" opacity="0.8" vectorEffect="non-scaling-stroke" />
         <path d={line((m) => m[1], yAccel)} fill="none" stroke="#cd7f32" strokeWidth="2" vectorEffect="non-scaling-stroke" />
