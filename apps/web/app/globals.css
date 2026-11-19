@@ -102,6 +102,48 @@ body {
 }
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
+/* ---------- Public landing page (app/(site)) ---------- */
+
+/* Bronze glow over the dark surface; the hero and closing CTA share it. */
+.hero-atmosphere {
+  background:
+    radial-gradient(ellipse 70% 55% at 85% 35%, rgb(205 127 50 / 0.24), transparent 62%),
+    linear-gradient(180deg, #0f0d0b 0%, #17120e 100%);
+}
+
+.site-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+@keyframes site-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes pill-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes pill-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes route-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes site-ping { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(3.4); opacity: 0; } }
+
+.rise { animation: site-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.pill-in { animation: pill-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.pill-float { animation: pill-float 5s ease-in-out infinite; }
+.route-draw { stroke-dasharray: 1; animation: route-draw 1.4s ease-out both; }
+.ping { transform-box: fill-box; transform-origin: center; animation: site-ping 2.2s ease-out infinite; }
+
+/* Scroll reveal: Reveal.tsx adds .reveal-armed only to content below the fold. */
+.reveal { transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+.reveal-armed { opacity: 0; transform: translateY(24px); }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise, .pill-in, .pill-float, .ping { animation: none; }
+  .route-draw { animation: none; stroke-dashoffset: 0; }
+  .reveal { transition: none; }
+}
+
 /* Print: mileage reports print as a clean light page */
 @media print {
   :root { color-scheme: light; --background: #fff; --foreground: #111; --muted: #444; --border: #ccc; --surface: #fff; --surface-2: #fff; }
