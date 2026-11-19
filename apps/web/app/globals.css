@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/*
+ * MileWire web is dark-mode only. Bronze is the primary colour.
+ * Tokens are real CSS variables so third-party widgets (Cesium, Mapbox popups)
+ * can read them too.
+ */
+:root {
+  color-scheme: dark;
+
+  --background: #0b0a09;
+  --surface: #141110;
+  --surface-2: #1c1815;
+  --surface-3: #26201b;
+  --border: #2d2621;
+  --foreground: #f3ede6;
+  --muted: #a39a90;
+  --subtle: #6f675e;
+
+  --primary: #cd7f32; /* bronze */
+  --primary-hover: #db9446;
+  --primary-soft: rgb(205 127 50 / 0.14);
+  --primary-foreground: #1a1109;
+
+  --success: #4caf7a;
+  --warning: #e0a030;
+  --danger: #e5584f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--primary-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Mapbox / Cesium chrome on the dark theme */
+.mapboxgl-popup-content {
+  background: var(--surface-2);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.5);
+}
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip { border-top-color: var(--surface-2); }
+.mapboxgl-popup-anchor-top .mapboxgl-popup-tip { border-bottom-color: var(--surface-2); }
+.mapboxgl-popup-anchor-left .mapboxgl-popup-tip { border-right-color: var(--surface-2); }
+.mapboxgl-popup-anchor-right .mapboxgl-popup-tip { border-left-color: var(--surface-2); }
+.mapboxgl-popup-close-button { color: var(--muted); font-size: 18px; padding: 2px 8px; }
+.mapboxgl-ctrl-group { background: var(--surface-2) !important; border: 1px solid var(--border); }
+.mapboxgl-ctrl-group button + button { border-top: 1px solid var(--border); }
+.mapboxgl-ctrl-group .mapboxgl-ctrl-icon { filter: invert(0.85); }
+/* Imagery and tile attribution must stay visible; just keep it small and quiet on the dark theme. */
+.cesium-viewer-bottom { font-size: 10px; opacity: 0.8; }
+.cesium-credit-textContainer, .cesium-credit-expand-link { color: var(--muted); }
+.cesium-widget-credits a { color: var(--muted); }
+
+/* Small mono label used above readouts in the focus and replay panels */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--subtle);
+}
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* Print: mileage reports print as a clean light page */
+@media print {
+  :root { color-scheme: light; --background: #fff; --foreground: #111; --muted: #444; --border: #ccc; --surface: #fff; --surface-2: #fff; }
+  body { background: #fff !important; color: #111 !important; }
+  .no-print { display: none !important; }
+}

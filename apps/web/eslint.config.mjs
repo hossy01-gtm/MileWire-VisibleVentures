@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored Cesium static assets, copied from node_modules at dev/build time.
+    "public/cesium/**",
   ]),
 ]);
 
