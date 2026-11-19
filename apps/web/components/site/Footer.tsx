@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { siteCopy } from "@/lib/site-copy";
 import { Logo } from "../Logo";
 
@@ -26,14 +25,14 @@ export function Footer() {
           <h3 className="site-eyebrow">Console</h3>
           <ul className="mt-4 space-y-3 text-sm">
             <li>
-              <Link href="/map" className="text-muted transition-colors hover:text-foreground">
+              <a href={siteCopy.consoleHref} className="text-muted transition-colors hover:text-foreground">
                 Open the console
-              </Link>
+              </a>
             </li>
             <li>
-              <Link href="/login" className="text-muted transition-colors hover:text-foreground">
+              <a href="/login" className="text-muted transition-colors hover:text-foreground">
                 Sign in
-              </Link>
+              </a>
             </li>
           </ul>
         </div>

@@ -14,8 +14,6 @@ type AuthValue = {
   demo: boolean;
   /** Resolves to an error message, or null on success. */
   signIn: (email: string, password: string) => Promise<string | null>;
-  /** Resolves to an error message, a notice to confirm email ("confirm"), or null when signed in. */
-  signUp: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
 };
 
@@ -45,20 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error ? "Email or password is incorrect." : null;
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
-    const sb = getSupabase();
-    if (!sb) return "MileWire is not connected to a database.";
-    const { data, error } = await sb.auth.signUp({ email: email.trim(), password });
-    if (error) return error.message;
-    return data.session ? null : "confirm";
-  }, []);
-
   const signOut = useCallback(async () => {
     await getSupabase()?.auth.signOut();
     if (!DEMO_MODE) setState({ status: "signedOut", user: null });
   }, []);
 
-  const value = useMemo<AuthValue>(() => ({ ...state, demo: DEMO_MODE, signIn, signUp, signOut }), [state, signIn, signUp, signOut]);
+  const value = useMemo<AuthValue>(() => ({ ...state, demo: DEMO_MODE, signIn, signOut }), [state, signIn, signOut]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

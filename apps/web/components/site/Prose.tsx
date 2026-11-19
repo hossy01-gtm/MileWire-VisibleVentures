@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { Reveal } from "./Reveal";
 
@@ -112,14 +111,8 @@ export function CtaButton({
       : "border border-foreground/25 text-foreground hover:border-primary hover:text-primary"
   }`;
 
-  // In-page anchors and external links are plain anchors; app routes use next/link.
-  if (to.startsWith("/") && !to.startsWith("//")) {
-    return (
-      <Link href={to} className={className}>
-        {children}
-      </Link>
-    );
-  }
+  // Plain anchors on purpose: these go to in-page sections or into the auth-gated console,
+  // where a full page load is the most reliable way in (no client-router prefetch or validation).
   return (
     <a href={to} className={className}>
       {children}

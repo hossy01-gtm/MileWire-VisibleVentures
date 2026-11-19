@@ -4,7 +4,19 @@
  * today; keep it that way (no pricing, compliance or hardware promises).
  */
 
+import { DEMO_MODE } from "./config";
+
+/**
+ * Where the "Open the console" buttons go. With real accounts, visitors who
+ * are not signed in would be bounced from /map to /login anyway, so go there
+ * directly (a signed-in visitor is forwarded on to /map by the login page).
+ * In demo mode there is no sign-in, so go straight to the map.
+ */
+const CONSOLE_HREF = DEMO_MODE ? "/map" : "/login";
+
 export const siteCopy = {
+  consoleHref: CONSOLE_HREF,
+
   nav: [
     { label: "How it works", href: "#how-it-works" },
     { label: "The console", href: "#console" },
@@ -15,7 +27,7 @@ export const siteCopy = {
     eyebrow: "Fleet tracking for small and mid-size fleets",
     title: "Fleet tracking without the telematics project.",
     lead: "MileWire turns the phones your drivers already carry into a live fleet map, drive replay and clean mileage reports. No dongles to install, no enterprise rollout, no dashboard you will never open.",
-    primary: { label: "Open the console", to: "/map" },
+    primary: { label: "Open the console", to: CONSOLE_HREF },
     secondary: { label: "See how it works", to: "#how-it-works" },
   },
 
@@ -28,7 +40,7 @@ export const siteCopy = {
     steps: [
       {
         title: "Create your fleet",
-        body: "Sign up on the web console and create a fleet. MileWire gives you a join code for your drivers.",
+        body: "Sign in to the web console and create a fleet. MileWire gives you a join code for your drivers.",
       },
       {
         title: "Drivers join with a code",
@@ -54,7 +66,7 @@ export const siteCopy = {
       { title: "Mileage reports", body: "Odometer-based mileage as CSV, or print straight to PDF." },
       { title: "Fleets and drivers", body: "Your roster, join code and recent activity in one place." },
     ],
-    cta: { label: "Open the console", to: "/map" },
+    cta: { label: "Open the console", to: CONSOLE_HREF },
   },
 
   why: {
@@ -84,7 +96,7 @@ export const siteCopy = {
   closing: {
     title: "Track your fleet without taking on a telematics project.",
     body: "Create a fleet, share the join code, and see your first drive on the map.",
-    primary: { label: "Open the console", to: "/map" },
+    primary: { label: "Open the console", to: CONSOLE_HREF },
     secondary: { label: "Sign in", to: "/login" },
   },
 

@@ -11,7 +11,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6 md:h-16">
-        <Link href="/" aria-label="MileWire home" onClick={() => setOpen(false)}>
+        <Link href="/" aria-label="MileWire home">
           <Logo size={28} wordmark />
         </Link>
 
@@ -24,15 +24,15 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link href="/login" className="px-3 py-2 text-sm text-muted transition-colors hover:text-foreground">
+          <a href="/login" className="px-3 py-2 text-sm text-muted transition-colors hover:text-foreground">
             Sign in
-          </Link>
-          <Link
-            href="/map"
+          </a>
+          <a
+            href={siteCopy.consoleHref}
             className="inline-flex items-center bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             Open the console
-          </Link>
+          </a>
         </div>
 
         <button
@@ -60,16 +60,15 @@ export function Header() {
                 {item.label}
               </a>
             ))}
-            <Link href="/login" onClick={() => setOpen(false)} className="py-2.5 text-sm text-muted hover:text-foreground">
+            <a href="/login" className="py-2.5 text-sm text-muted hover:text-foreground">
               Sign in
-            </Link>
-            <Link
-              href="/map"
-              onClick={() => setOpen(false)}
+            </a>
+            <a
+              href={siteCopy.consoleHref}
               className="mt-2 inline-flex items-center justify-center bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
             >
               Open the console
-            </Link>
+            </a>
           </div>
         </div>
       )}
