@@ -1,7 +1,8 @@
 /**
  * All wording for the public landing page lives here so it can be edited
  * without touching components. Every claim below is something the app does
- * today; keep it that way (no pricing, compliance or hardware promises).
+ * today; keep it that way (no compliance or hardware promises, and no dollar
+ * amounts or plan limits until they are real: pricing is quoted through sales).
  */
 
 import { DEMO_MODE } from "./config";
@@ -18,9 +19,10 @@ export const siteCopy = {
   consoleHref: CONSOLE_HREF,
 
   nav: [
-    { label: "How it works", href: "#how-it-works" },
-    { label: "The console", href: "#console" },
-    { label: "Why MileWire", href: "#why" },
+    { label: "How it works", href: "/#how-it-works" },
+    { label: "The console", href: "/#console" },
+    { label: "Why MileWire", href: "/#why" },
+    { label: "Pricing", href: "/#pricing" },
   ],
 
   hero: {
@@ -91,6 +93,43 @@ export const siteCopy = {
         body: "Set up a fleet, add vehicles and read a mileage report without an implementation team or a training course.",
       },
     ],
+  },
+
+  pricing: {
+    eyebrow: "Pricing",
+    title: "Two ways to run MileWire",
+    lead: "Pricing is quoted for your fleet size, so you only pay for the drivers you actually track. Tell us about your fleet and we will come back with a number.",
+    plans: [
+      {
+        id: "fleet",
+        name: "Fleet",
+        audience: "For a single fleet.",
+        price: "Custom quote",
+        priceNote: "Based on the number of drivers",
+        features: [
+          "Live map of every driver",
+          "Drive replay at the speed you choose",
+          "Mileage reports as CSV or PDF",
+          "Speed and motion charts, bumps flagged",
+          "Vehicles and driver assignments",
+        ],
+      },
+      {
+        id: "multi-fleet",
+        name: "Multi-fleet",
+        audience: "For operators running several fleets.",
+        price: "Custom quote",
+        priceNote: "Based on fleets and drivers",
+        features: [
+          "Everything in Fleet",
+          "Several fleets in one console",
+          "Switch between fleets without signing out",
+          "3D focus on any live driver",
+          "Talk to us about rollout and onboarding",
+        ],
+      },
+    ],
+    cta: "Contact sales",
   },
 
   closing: {

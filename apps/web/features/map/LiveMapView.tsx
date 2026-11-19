@@ -21,7 +21,8 @@ export function LiveMapView() {
   const [unit] = useUnit();
   const [selected, setSelected] = useState<string | null>(null);
   const [routeId, setRouteId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"live" | "recent">("live");
+  // Recent drives is the landing tab; Live sits to its right and signals activity with a record dot.
+  const [tab, setTab] = useState<"recent" | "live">("recent");
 
   const { data: live } = useAsyncData(() => (active ? repo.listLive(active.id) : Promise.resolve([])), [active?.id], POLL_MS);
   const { data: members } = useAsyncData(() => (active ? repo.listMembers(active.id) : Promise.resolve([])), [active?.id]);
@@ -50,16 +51,27 @@ export function LiveMapView() {
           <h1 className="truncate text-sm font-semibold">{active.name}</h1>
           <p className="text-xs text-muted">{(live ?? []).length} driving now</p>
           <div role="tablist" className="mt-3 inline-flex rounded-lg border border-border bg-surface-2 p-0.5">
-            {(["live", "recent"] as const).map((t) => (
+            {(["recent", "live"] as const).map((t) => (
               <button
                 key={t}
                 role="tab"
                 aria-selected={tab === t}
                 type="button"
                 onClick={() => setTab(t)}
-                className={cn("h-7 rounded-md px-3 text-xs font-medium", tab === t ? "bg-primary text-primary-foreground" : "text-muted hover:text-foreground")}
+                className={cn(
+                  "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium",
+                  tab === t ? "bg-primary text-primary-foreground" : "text-muted hover:text-foreground",
+                )}
               >
-                {t === "live" ? "Live" : "Recent drives"}
+                {t === "live" ? (
+                  <>
+                    <span className={cn("rec-dot", (live ?? []).length > 0 && "rec-dot-on")} aria-hidden />
+                    Live
+                    {(live ?? []).length > 0 ? <span className="sr-only"> ({(live ?? []).length} driving now)</span> : null}
+                  </>
+                ) : (
+                  "Recent drives"
+                )}
               </button>
             ))}
           </div>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ClosingCta, FeatureGrid, StepCards, ValueGrid } from "@/components/site/Content";
+import { ClosingCta, FeatureGrid, PricingCards, StepCards, ValueGrid } from "@/components/site/Content";
 import { FleetVisual } from "@/components/site/FleetVisual";
 import { CtaButton, PageHero, Section } from "@/components/site/Prose";
 import { CubeIcon, GaugeIcon, PinIcon, PulseIcon, RewindIcon, TruckIcon, UsersIcon } from "@/components/site/icons";
@@ -41,6 +41,10 @@ export default function Home() {
 
       <Section id="why" eyebrow={copy.why.eyebrow} title={copy.why.title} lead={copy.why.lead}>
         <ValueGrid points={copy.why.points} />
+      </Section>
+
+      <Section id="pricing" eyebrow={copy.pricing.eyebrow} title={copy.pricing.title} lead={copy.pricing.lead} tone="surface">
+        <PricingCards plans={copy.pricing.plans} cta={copy.pricing.cta} />
       </Section>
 
       <ClosingCta
