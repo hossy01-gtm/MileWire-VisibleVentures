@@ -10,7 +10,7 @@ import { PLAN_OPTIONS, validateContactSales } from "@/lib/contact-sales";
  *   EMAIL_FROM        Verified sender, e.g. "MileWire <noreply@your-verified-domain.com>"
  *   CONTACT_SALES_TO  Inbox that receives enquiries
  *
- * Same Resend call as tnag-website (plain fetch to the Resend REST API, no SDK).
+ * Sends through Resend with a plain fetch to its REST API (no SDK).
  */
 
 const RESEND_URL = "https://api.resend.com/emails";

@@ -108,7 +108,7 @@ const describeError = (e: unknown): string => (e instanceof Error ? e.message : 
  *
  * `sampleHeight` returns the first surface a ray meets, which at a GPS pin on a building footprint is a
  * rooftop or tree canopy. A ring of probes around the pin usually still sees pavement, so the lowest
- * plausible reading is used (the same policy as the Pada business console).
+ * plausible reading is used.
  *
  * The sampling ray would hit our own route lines, and `objectsToExclude` does not skip a
  * PolylineCollection, so the lines are hidden for the duration of the call instead. Without

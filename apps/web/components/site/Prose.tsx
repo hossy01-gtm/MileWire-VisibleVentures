@@ -3,7 +3,7 @@ import { Reveal } from "./Reveal";
 
 /**
  * Page hero: eyebrow, headline, lead, CTAs and an optional visual on the right.
- * Same anatomy as the TNAG acquisitions hero, on the bronze dark theme.
+ * Laid out for the bronze dark theme.
  * The entrance is CSS-only (`.rise`) so it never waits on hydration.
  */
 export function PageHero({

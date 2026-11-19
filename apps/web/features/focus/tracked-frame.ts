@@ -1,5 +1,5 @@
 /**
- * Tracked-subject camera frame, ported from the Pada business console.
+ * Tracked-subject camera frame.
  *
  * Orbit and chase keep a lookAt transform on the vehicle and re-apply the camera's LOCAL offset every
  * frame, so the eye travels with the vehicle and the user's drag / zoom rotate around it. (A bare

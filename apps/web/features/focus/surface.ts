@@ -63,7 +63,7 @@ export function heightsDiffer(a: ReadonlyArray<number> | null | undefined, b: Re
   return false;
 }
 
-/* ---------- Street-floor sampling (ported from the Pada business console's mesh-floor policy) ---------- */
+/* ---------- Street-floor sampling (lowest plausible mesh reading around the pin) ---------- */
 
 /**
  * `scene.sampleHeight` returns the first surface it hits: a rooftop or tree canopy when the GPS pin sits
