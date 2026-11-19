@@ -1,6 +1,7 @@
 import * as Location from 'expo-location';
 import { Linking } from 'react-native';
 
+import { getSimulatedFix, watchSimulatedFixes } from '../testing/runtime';
 import type { Fix } from '../tracking/types';
 
 export type LocationPermission = 'granted' | 'denied' | 'blocked' | 'undetermined';
@@ -37,6 +38,9 @@ function toFix(loc: Location.LocationObject): Fix {
 
 /** One quick fix, for centring the landing map. Null when unavailable. */
 export async function getCurrentFix(): Promise<Fix | null> {
+  // Dev simulation (config/testing.developer.json): the route's current position.
+  const simulated = await getSimulatedFix();
+  if (simulated) return simulated;
   try {
     const last = await Location.getLastKnownPositionAsync();
     if (last) return toFix(last);
@@ -57,6 +61,8 @@ export async function watchIdleFixes(
   onFix: (fix: Fix) => void,
   onError?: (message: string) => void,
 ): Promise<LocationWatch> {
+  const stopSimulated = await watchSimulatedFixes(onFix);
+  if (stopSimulated) return { stop: stopSimulated };
   const sub = await Location.watchPositionAsync(
     {
       accuracy: Location.Accuracy.High,
@@ -77,6 +83,8 @@ export async function watchFixes(
   onFix: (fix: Fix) => void,
   onError?: (message: string) => void,
 ): Promise<LocationWatch> {
+  const stopSimulated = await watchSimulatedFixes(onFix);
+  if (stopSimulated) return { stop: stopSimulated };
   const sub = await Location.watchPositionAsync(
     {
       accuracy: Location.Accuracy.BestForNavigation,

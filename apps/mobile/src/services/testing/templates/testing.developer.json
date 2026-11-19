@@ -1,0 +1,14 @@
+{
+  "enabled": false,
+  "objective": "",
+  "objectives": [
+    "fisherville-to-fit4less"
+  ],
+  "showDevSettings": false,
+  "autoPlay": true,
+  "devTestValues": {
+    "simulationIntervalMs": 1000,
+    "simulationSpeedMps": 20,
+    "simulationAccelMps2": 3
+  }
+}

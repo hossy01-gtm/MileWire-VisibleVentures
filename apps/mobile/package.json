@@ -8,6 +8,7 @@
     "@rnmapbox/maps": "^10.3.18",
     "@supabase/supabase-js": "^2.119.0",
     "expo": "~58.0.24",
+    "expo-asset": "~58.0.21",
     "expo-constants": "~58.0.16",
     "expo-crypto": "~58.0.8",
     "expo-dev-client": "~58.0.19",
@@ -38,6 +39,7 @@
     "zustand": "^5.1.0"
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
     "@types/react": "~19.3.0",
     "eslint-config-expo": "~58.0.4",
     "typescript": "~6.0.3",
