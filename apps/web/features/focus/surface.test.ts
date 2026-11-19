@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { chooseSurfaceHeight, heightsDiffer, interpolateAt, isPlausibleSurfaceHeight, sampleIndices } from "./surface";
+import {
+  chooseSurfaceHeight,
+  groundClearanceDeficit,
+  heightsDiffer,
+  interpolateAt,
+  isPlausibleSurfaceHeight,
+  nearestTrailIndex,
+  offsetLatLon,
+  pickStreetFloor,
+  sampleIndices,
+  shouldTrustMeshSample,
+  streetProbeOffsetsM,
+} from "./surface";
 
 describe("sampleIndices", () => {
   it("returns every index when there are few vertices", () => {
@@ -88,5 +100,45 @@ describe("heightsDiffer", () => {
   });
   it("detects a change beyond the tolerance", () => {
     expect(heightsDiffer([10, 20], [10, 21])).toBe(true);
+  });
+});
+
+
+describe("street floor sampling", () => {
+  it("probes the pin and a four-point ring", () => {
+    const o = streetProbeOffsetsM(10);
+    expect(o).toHaveLength(5);
+    expect(o[0]).toEqual({ eastM: 0, northM: 0 });
+    expect(Math.hypot(o[1].eastM, o[1].northM)).toBeCloseTo(10);
+  });
+
+  it("takes the lowest plausible probe so a rooftop at the pin loses", () => {
+    expect(pickStreetFloor([120, 98, 101, undefined, 99])).toBe(98);
+    expect(pickStreetFloor([undefined, 99999])).toBeUndefined();
+  });
+
+  it("moves a point by metres", () => {
+    const p = offsetLatLon(45, -75, 0, 111_320);
+    expect(p.lat).toBeCloseTo(46);
+    expect(p.lon).toBeCloseTo(-75);
+  });
+
+  it("trusts mesh samples only with the camera close and tiles settled", () => {
+    expect(shouldTrustMeshSample(5000, true)).toBe(false);
+    expect(shouldTrustMeshSample(1000, false)).toBe(false);
+    expect(shouldTrustMeshSample(1000, true)).toBe(true);
+    expect(shouldTrustMeshSample(200, false)).toBe(true);
+    expect(shouldTrustMeshSample(null, true)).toBe(false);
+  });
+
+  it("reports how far the eye must rise to clear the surface", () => {
+    expect(groundClearanceDeficit(100, 95, 12)).toBeCloseTo(7);
+    expect(groundClearanceDeficit(120, 95, 12)).toBe(0);
+    expect(groundClearanceDeficit(100, null, 12)).toBe(0);
+  });
+
+  it("finds the nearest trail vertex", () => {
+    expect(nearestTrailIndex([[0, 0], [1, 1], [2, 2]], 1.1, 0.9)).toBe(1);
+    expect(nearestTrailIndex([], 0, 0)).toBe(-1);
   });
 });

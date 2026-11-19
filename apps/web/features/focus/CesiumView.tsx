@@ -7,18 +7,37 @@ import { CESIUM_ION_TOKEN, MAPBOX_TOKEN, hasMapbox } from "@/lib/config";
 import { Spinner } from "@/components/ui";
 import {
   chasePitchRad,
-  chaseRangeM,
   easeToward,
   FPV_EYE_HEIGHT_M,
   orbitPitchRad,
-  orbitRangeM,
   shortestTurnDeg,
   tiltedPitchRad,
   type CameraCommand,
   type CameraCommandKind,
   type CameraMode,
 } from "./camera";
-import { chooseSurfaceHeight, heightsDiffer, interpolateAt, isPlausibleSurfaceHeight, sampleIndices } from "./surface";
+import {
+  chooseSurfaceHeight,
+  groundClearanceDeficit,
+  heightsDiffer,
+  interpolateAt,
+  isPlausibleSurfaceHeight,
+  nearestTrailIndex,
+  offsetLatLon,
+  pickStreetFloor,
+  sampleIndices,
+  shouldTrustMeshSample,
+  streetProbeOffsetsM,
+} from "./surface";
+import {
+  EYE_CLEARANCE_M,
+  MIN_TRACKED_RANGE_M,
+  headingPitchRangeToOffset,
+  liftOffsetUp,
+  offsetForFollow,
+  offsetToHeadingPitchRange,
+  type Offset,
+} from "./tracked-frame";
 
 export type FocusPose = { lat: number; lon: number; headingDeg: number | null };
 export type FocusJolt = { lat: number; lon: number; severity: "low" | "medium" | "high" };
@@ -53,13 +72,20 @@ const BRONZE = "#cd7f32";
 const SEVERITY = { low: "#e0a030", medium: "#e8742b", high: "#e5584f" } as const;
 
 const STEP_TIMEOUT_MS = 20_000;
-/** Each tile-mesh height sample costs a scene render, so a route is sampled at no more than this many vertices. */
-const MAX_MESH_SAMPLES = 60;
+/**
+ * Each tile-mesh height sample costs a scene render, and every route vertex is a five-point street-floor
+ * probe, so a route is sampled at no more than this many vertices (terrain carries the detail between).
+ */
+const MAX_MESH_SAMPLES = 30;
 /** Re-sample route heights at most this many times as tiles settle, and no more often than the gap below. */
-const MAX_SURFACE_EPOCHS = 12;
+const MAX_SURFACE_EPOCHS = 6;
 const SURFACE_EPOCH_GAP_MS = 2500;
-/** How often the surface under the vehicle is read for the camera. */
-const GROUND_SAMPLE_MS = 250;
+/** How often the surface under the vehicle (and under the camera) is read. */
+const GROUND_SAMPLE_MS = 500;
+/** The vehicle marker floats this far above the surface, like the route lines. */
+const VEHICLE_LIFT_M = 0.15;
+/** The look-at target sits this far above the street, roughly the vehicle's centre. */
+const TARGET_LIFT_M = 1;
 /** Route lines float this far above the surface so they are not swallowed by it. */
 const LIFT_PHOTOREAL_M = 1.5;
 const LIFT_TERRAIN_M = 0.8;
@@ -78,21 +104,31 @@ function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
 const describeError = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
 /**
- * Height of the 3D surface at a position, or undefined while its tiles haven't streamed in.
+ * Street-level height of the 3D surface at a position, or undefined while its tiles haven't streamed in.
+ *
+ * `sampleHeight` returns the first surface a ray meets, which at a GPS pin on a building footprint is a
+ * rooftop or tree canopy. A ring of probes around the pin usually still sees pavement, so the lowest
+ * plausible reading is used (the same policy as the Pada business console).
  *
  * The sampling ray would hit our own route lines, and `objectsToExclude` does not skip a
  * PolylineCollection, so the lines are hidden for the duration of the call instead. Without
  * this the lines read their own height back, rise on every re-sample, and drag the camera up.
  */
-function sampleSurface(Cesium: CesiumModule, viewer: Viewer, lines: PolylineCollection | null, lon: number, lat: number): number | undefined {
+function sampleStreetFloor(Cesium: CesiumModule, viewer: Viewer, lines: PolylineCollection | null, lon: number, lat: number): number | undefined {
   if (viewer.isDestroyed() || !viewer.scene.sampleHeightSupported) return undefined;
   const wasShown = lines?.show ?? true;
   if (lines) lines.show = false;
   try {
-    const h = viewer.scene.sampleHeight(Cesium.Cartographic.fromDegrees(lon, lat));
-    return isPlausibleSurfaceHeight(h) ? h : undefined;
-  } catch {
-    return undefined;
+    const probes = streetProbeOffsetsM().map((o) => {
+      const at = offsetLatLon(lat, lon, o.eastM, o.northM);
+      try {
+        const h = viewer.scene.sampleHeight(Cesium.Cartographic.fromDegrees(at.lon, at.lat));
+        return isPlausibleSurfaceHeight(h) ? h : undefined;
+      } catch {
+        return undefined;
+      }
+    });
+    return pickStreetFloor(probes);
   } finally {
     if (lines) lines.show = wasShown;
   }
@@ -140,7 +176,6 @@ export default function CesiumView({
   const commandRef = useRef<CameraCommand | null>(command);
   const handledNonceRef = useRef(0);
   const shownRef = useRef<Shown | null>(null);
-  const prevModeRef = useRef<CameraMode | null>(null);
   const photorealRef = useRef(false);
   const tiltedRef = useRef(false);
   const northUpRef = useRef(false);
@@ -151,6 +186,13 @@ export default function CesiumView({
   const terrainRef = useRef<TerrainProvider | null>(null);
   const terrainGroundRef = useRef<{ h: number | undefined; pending: boolean }>({ h: undefined, pending: false });
   const terrainKnownRef = useRef(new Map<string, number>());
+  const tilesetRef = useRef<import("cesium").Cesium3DTileset | null>(null);
+  /** Flips true once the first full set of tiles has streamed in; camera collision is unsafe before then. */
+  const tilesSettledRef = useRef(false);
+  /** The camera's local offset from the vehicle (look-at frame) as last applied, carried between frames. */
+  const lastOffsetRef = useRef<Offset | null>(null);
+  const framedRef = useRef(false);
+  const eyeFloorRef = useRef<{ h: number | undefined; sampledAt: number }>({ h: undefined, sampledAt: 0 });
   const onReadyRef = useRef(onReadyChange);
 
   useEffect(() => {
@@ -199,6 +241,7 @@ export default function CesiumView({
           baseLayer: false,
           requestRenderMode: false,
         });
+        viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
         viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#141110");
         viewer.scene.backgroundColor = Cesium.Color.fromCssColorString("#0b0a09");
         viewer.scene.globe.depthTestAgainstTerrain = true;
@@ -213,7 +256,7 @@ export default function CesiumView({
               // This view offers no place search or geocoding, so the Google geocoder attestation holds.
               Cesium.createGooglePhotorealistic3DTileset(
                 { onlyUsingWithGoogleGeocoder: true },
-                { maximumScreenSpaceError: 8, cacheBytes: 1024 * 1024 * 1024, maximumCacheOverflowBytes: 512 * 1024 * 1024 },
+                { maximumScreenSpaceError: 8, cacheBytes: 1536 * 1024 * 1024, maximumCacheOverflowBytes: 1024 * 1024 * 1024, enableCollision: true },
               ),
               "Photorealistic tiles",
             );
@@ -224,10 +267,12 @@ export default function CesiumView({
             viewer.scene.primitives.add(tileset);
             // The tiles are the surface; a globe underneath would poke through as a dark shell.
             viewer.scene.globe.show = false;
+            viewer.scene.globe.baseColor = Cesium.Color.BLACK;
             viewer.scene.globe.depthTestAgainstTerrain = false;
-            // We place the camera ourselves. Cesium's collision check reads the same surface sampler,
-            // and while only coarse tiles are loaded that reads kilometres high and yanks the camera up.
+            // Camera collision reads the tile mesh, and while only coarse tiles are loaded that reads
+            // kilometres high and yanks the camera up. It stays off until the tiles first settle (below).
             viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
+            tilesetRef.current = tileset;
             kind = "photoreal";
 
             // Reference ground for the sampler. Not drawn: the tiles are the surface.
@@ -241,6 +286,8 @@ export default function CesiumView({
             // Re-sample route heights once streaming settles (throttled: this event fires often).
             let epochs = 0;
             const onSettled = () => {
+              // Camera collision switches on from the next frame (applyInputPolicy reads this flag).
+              tilesSettledRef.current = true;
               if (epochTimer || epochs >= MAX_SURFACE_EPOCHS) return;
               epochTimer = setTimeout(() => {
                 epochTimer = undefined;
@@ -303,19 +350,20 @@ export default function CesiumView({
           } else setNotice(`Photorealistic 3D unavailable${failure ? ` (${failure})` : ""}. Showing ${kind === "terrain" ? "terrain" : "a basic globe"}.`);
         }
 
-        // The vehicle reads the eased pose every frame, so React never re-renders for motion.
+        // The vehicle reads the eased pose every frame, so React never re-renders for motion. It sits at the
+        // same street-floor height as the camera target and the route lines (not CLAMP_TO_GROUND, which
+        // reads a different surface than the one we sample and drifts away from the lines under photoreal tiles).
         const vehicle = viewer.entities.add({
           id: "vehicle",
           position: new Cesium.CallbackPositionProperty(() => {
-            const s = shownRef.current;
-            return s ? Cesium.Cartesian3.fromDegrees(s.lon, s.lat) : undefined;
+            const sh = shownRef.current;
+            return sh ? Cesium.Cartesian3.fromDegrees(sh.lon, sh.lat, (groundRef.current.eased ?? 0) + VEHICLE_LIFT_M) : undefined;
           }, false),
           point: {
             pixelSize: 16,
             color: Cesium.Color.fromCssColorString(BRONZE),
             outlineColor: Cesium.Color.WHITE,
             outlineWidth: 3,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
           },
         });
@@ -331,13 +379,42 @@ export default function CesiumView({
 
         const v = viewer;
         let last = performance.now();
-        let lastOrbitAnchor: import("cesium").Cartesian3 | null = null;
+        let lastMode: CameraMode | null = null;
+        let lastFrameKind: "enu" | "body" | null = null;
+
+        /** Camera input policy: orbit / chase rotate and zoom around the vehicle; in-car owns the view. */
+        const applyInputPolicy = (m: CameraMode) => {
+          const c = v.scene.screenSpaceCameraController;
+          const lookAt = m !== "fpv";
+          c.enableInputs = true;
+          c.enableRotate = lookAt;
+          c.enableTilt = lookAt;
+          c.enableTranslate = false;
+          c.enableZoom = lookAt;
+          c.enableLook = false;
+          c.minimumZoomDistance = MIN_TRACKED_RANGE_M;
+          c.maximumZoomDistance = 25_000;
+          c.inertiaZoom = 0;
+          c.inertiaSpin = lookAt ? 0.9 : 0;
+          c.inertiaTranslate = 0;
+          // Collision needs a settled tile mesh (see the tileset listener); terrain / basic have none.
+          c.enableCollisionDetection = photorealRef.current ? tilesSettledRef.current : true;
+        };
+
+        /** Street-floor height under a point, or undefined when the mesh can't be trusted yet (camera far, tiles streaming). */
+        const meshFloorAt = (lon: number, lat: number, terrainH: number | undefined): number | undefined => {
+          const camH = v.camera.positionCartographic?.height;
+          const tiles = tilesetRef.current;
+          const trusted = shouldTrustMeshSample(camH, tilesSettledRef.current || tiles?.tilesLoaded === true);
+          const mesh = trusted ? sampleStreetFloor(Cesium, v, collection, lon, lat) : undefined;
+          return chooseSurfaceHeight(mesh, terrainH, SURFACE_WINDOW_M);
+        };
 
         /** Height of the surface under the vehicle, eased so rooftops and overpasses don't make the camera jump. */
         const groundAt = (lon: number, lat: number, now: number, dtS: number): number => {
           const g = groundRef.current;
           const photoreal = photorealRef.current;
-          if (!photoreal || now - g.sampledAt > GROUND_SAMPLE_MS) {
+          if (now - g.sampledAt > GROUND_SAMPLE_MS) {
             g.sampledAt = now;
             let h: number | undefined;
             try {
@@ -356,7 +433,7 @@ export default function CesiumView({
                       tg.pending = false;
                     });
                 }
-                h = chooseSurfaceHeight(sampleSurface(Cesium, v, collection, lon, lat), tg.h, SURFACE_WINDOW_M);
+                h = meshFloorAt(lon, lat, tg.h);
               } else {
                 h = v.scene.globe.getHeight(Cesium.Cartographic.fromDegrees(lon, lat));
               }
@@ -369,7 +446,12 @@ export default function CesiumView({
           return g.eased ?? 0;
         };
 
-        const onPreRender = () => {
+        /**
+         * Follows the vehicle. Runs in preUpdate, i.e. before Cesium culls and selects tiles for the frame,
+         * so the tiles streamed in are the ones for where the camera actually is (preRender runs after that
+         * selection and left the view one frame behind the vehicle).
+         */
+        const onFollow = () => {
           const target = targetRef.current;
           if (!target) return;
           const now = performance.now();
@@ -389,12 +471,15 @@ export default function CesiumView({
           shownRef.current = shown;
 
           const m = modeRef.current;
-          const modeChanged = prevModeRef.current !== m;
-          prevModeRef.current = m;
+          const modeChanged = lastMode !== m;
+          lastMode = m;
           if (modeChanged) {
             tiltedRef.current = false;
             northUpRef.current = false;
+            framedRef.current = false;
+            lastOffsetRef.current = null;
           }
+          applyInputPolicy(m);
 
           // Toolbar action, consumed once per press.
           let action: CameraCommandKind | null = null;
@@ -403,64 +488,92 @@ export default function CesiumView({
             handledNonceRef.current = pending.nonce;
             action = pending.kind;
           }
-          if (action === "recage") {
-            tiltedRef.current = false;
-            northUpRef.current = false;
-          } else if (action === "tilt") {
-            tiltedRef.current = !tiltedRef.current;
-          } else if (action === "north" && m === "chase") {
-            northUpRef.current = true;
-          }
 
           const ground = groundAt(shown.lon, shown.lat, now, dtS);
-          const here = Cesium.Cartesian3.fromDegrees(shown.lon, shown.lat, ground + 1);
           const headingRad = Cesium.Math.toRadians(shown.headingDeg);
-          const previous = lastOrbitAnchor;
-          lastOrbitAnchor = m === "orbit" ? here : null;
 
-          if (m === "orbit") {
-            if (modeChanged || !previous || action) {
-              // Frame north-up and elevated; Tilt and North keep the rest of the user's view.
-              let h = 0;
-              let p = orbitPitchRad();
-              let r = orbitRangeM();
-              if (action === "tilt" || action === "north") {
-                v.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-                r = Math.max(30, Cesium.Cartesian3.distance(v.camera.positionWC, here));
-                if (action === "tilt") {
-                  h = v.camera.heading;
-                  p = tiltedRef.current ? tiltedPitchRad("orbit") : orbitPitchRad();
-                } else {
-                  p = v.camera.pitch;
-                }
-              }
-              v.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-              v.camera.lookAt(here, new Cesium.HeadingPitchRange(h, p, r));
-              v.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-            } else {
-              // Follow by carrying the camera along with the vehicle, keeping the user's view.
-              const delta = Cesium.Cartesian3.subtract(here, previous, new Cesium.Cartesian3());
-              const dist = Cesium.Cartesian3.magnitude(delta);
-              if (dist > 0) v.camera.move(Cesium.Cartesian3.normalize(delta, delta), dist);
-            }
-            return;
-          }
-
-          if (m === "chase") {
-            v.camera.lookAt(
-              here,
-              new Cesium.HeadingPitchRange(northUpRef.current ? 0 : headingRad, tiltedRef.current ? tiltedPitchRad("chase") : chasePitchRad(), chaseRangeM()),
-            );
-          } else {
+          if (m === "fpv") {
             v.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+            framedRef.current = false;
+            lastOffsetRef.current = null;
+            lastFrameKind = null;
             v.camera.setView({
               destination: Cesium.Cartesian3.fromDegrees(shown.lon, shown.lat, ground + FPV_EYE_HEIGHT_M),
               orientation: { heading: headingRad, pitch: Cesium.Math.toRadians(-4), roll: 0 },
             });
+            return;
+          }
+
+          // Orbit and chase: a look-at frame anchored on the vehicle, the camera's local offset re-applied each
+          // frame. Orbit uses east-north-up; chase uses the vehicle's body frame (so it turns with the vehicle),
+          // or east-north-up once North is pressed.
+          const origin = Cesium.Cartesian3.fromDegrees(shown.lon, shown.lat, ground + TARGET_LIFT_M);
+          const readLocal = (): Offset => ({ x: v.camera.position.x, y: v.camera.position.y, z: v.camera.position.z });
+
+          // A one-shot offset from the toolbar (tilt / north) is applied as-is this frame.
+          let forced: Offset | null = null;
+          if (action === "recage") {
+            tiltedRef.current = false;
+            northUpRef.current = false;
+            framedRef.current = false;
+            lastOffsetRef.current = null;
+          } else if (action === "tilt" || (action === "north" && m === "orbit")) {
+            // Re-aim the existing view: tilt toggles a steeper look-down, north faces the camera north (orbit).
+            const hpr = framedRef.current ? offsetToHeadingPitchRange(readLocal()) : null;
+            if (hpr) {
+              if (action === "tilt") tiltedRef.current = !tiltedRef.current;
+              const pitch = action === "tilt" ? (tiltedRef.current ? tiltedPitchRad(m) : m === "orbit" ? orbitPitchRad() : chasePitchRad()) : hpr.pitchRad;
+              forced = headingPitchRangeToOffset(action === "north" ? 0 : hpr.headingRad, pitch, hpr.rangeM);
+            } else {
+              framedRef.current = false;
+              lastOffsetRef.current = null;
+            }
+          } else if (action === "north" && m === "chase") {
+            northUpRef.current = true; // switches to the east-north-up frame, handled just below
+          }
+
+          // A frame change (chase body <-> east-north-up) invalidates the local offset.
+          const nowKind: "enu" | "body" = m === "orbit" || northUpRef.current ? "enu" : "body";
+          const transform =
+            nowKind === "enu"
+              ? Cesium.Transforms.eastNorthUpToFixedFrame(origin)
+              : Cesium.Transforms.headingPitchRollToFixedFrame(origin, new Cesium.HeadingPitchRoll(headingRad, 0, 0));
+          if (lastFrameKind !== null && lastFrameKind !== nowKind) {
+            framedRef.current = false;
+            lastOffsetRef.current = null;
+            forced = null;
+          }
+          lastFrameKind = nowKind;
+
+          const framed = framedRef.current;
+          const offset = forced ?? offsetForFollow({ framed, mode: m, current: framed ? readLocal() : null, previous: lastOffsetRef.current });
+          v.camera.lookAtTransform(transform, new Cesium.Cartesian3(offset.x, offset.y, offset.z));
+          lastOffsetRef.current = offset;
+          framedRef.current = true;
+
+          // Keep the eye above facades and trees. The surface under the eye is sampled on the ground cadence
+          // and reused between samples; the lift is applied every frame against the current eye height.
+          const eye = v.camera.positionCartographic;
+          if (eye && photorealRef.current) {
+            const ef = eyeFloorRef.current;
+            if (now - ef.sampledAt > GROUND_SAMPLE_MS) {
+              ef.sampledAt = now;
+              const eyeLon = Cesium.Math.toDegrees(eye.longitude);
+              const eyeLat = Cesium.Math.toDegrees(eye.latitude);
+              const camH = eye.height;
+              const trusted = shouldTrustMeshSample(camH, tilesSettledRef.current || tilesetRef.current?.tilesLoaded === true);
+              ef.h = trusted ? chooseSurfaceHeight(sampleStreetFloor(Cesium, v, collection, eyeLon, eyeLat), terrainGroundRef.current.h, SURFACE_WINDOW_M) : undefined;
+            }
+            const lift = groundClearanceDeficit(eye.height, ef.h, EYE_CLEARANCE_M);
+            if (lift > 0) {
+              const raised = liftOffsetUp(readLocal(), lift);
+              v.camera.lookAtTransform(transform, new Cesium.Cartesian3(raised.x, raised.y, raised.z));
+              lastOffsetRef.current = raised;
+            }
           }
         };
-        v.scene.preRender.addEventListener(onPreRender);
-        removePreRender = () => v.scene.preRender.removeEventListener(onPreRender);
+        v.scene.preUpdate.addEventListener(onFollow);
+        removePreRender = () => v.scene.preUpdate.removeEventListener(onFollow);
 
         resize = new ResizeObserver(() => !v.isDestroyed() && v.resize());
         resize.observe(container);
@@ -485,9 +598,13 @@ export default function CesiumView({
       collectionRef.current = null;
       linesRef.current = null;
       shownRef.current = null;
-      prevModeRef.current = null;
       photorealRef.current = false;
       groundRef.current = { eased: null, target: undefined, sampledAt: 0 };
+      eyeFloorRef.current = { h: undefined, sampledAt: 0 };
+      tilesetRef.current = null;
+      tilesSettledRef.current = false;
+      framedRef.current = false;
+      lastOffsetRef.current = null;
       terrainRef.current = null;
       terrainGroundRef.current = { h: undefined, pending: false };
     };
@@ -553,7 +670,7 @@ export default function CesiumView({
         const prev = known.get(key);
         let sample = prev && prev.epoch === surfaceEpoch ? prev.h : undefined;
         if (sample === undefined) {
-          sample = sampleSurface(Cesium, viewer, collectionRef.current, lon, lat);
+          sample = sampleStreetFloor(Cesium, viewer, collectionRef.current, lon, lat);
           if (sample !== undefined) known.set(key, { h: sample, epoch: surfaceEpoch });
         }
         const chosen = chooseSurfaceHeight(sample, terrainAt[i], SURFACE_WINDOW_M);
@@ -598,28 +715,33 @@ export default function CesiumView({
     lines.traveled.show = showRoute && driven.length > 1;
   }, [status, surface, trail, traveledCount, pose, heights, showRoute]);
 
-  // Bump markers.
+  // Bump markers. They sit on the same surface heights as the route lines (nearest route vertex), not on a
+  // separate clamp, so they stay on the line under photoreal tiles.
   useEffect(() => {
     const viewer = viewerRef.current;
     const Cesium = cesiumRef.current;
     if (status !== "ready" || !viewer || !Cesium || viewer.isDestroyed()) return;
 
+    const lift = surface === "photoreal" ? LIFT_PHOTOREAL_M : LIFT_TERRAIN_M;
     for (const e of [...viewer.entities.values]) if (e.id.startsWith("jolt-")) viewer.entities.remove(e);
     if (!showBumps) return;
-    (jolts ?? []).forEach((j, i) =>
+    (jolts ?? []).forEach((j, i) => {
+      const near = heights && trail ? nearestTrailIndex(trail, j.lon, j.lat) : -1;
+      const h = near >= 0 ? heights?.[near] : undefined;
       viewer.entities.add({
         id: `jolt-${i}`,
-        position: Cesium.Cartesian3.fromDegrees(j.lon, j.lat),
+        position: Cesium.Cartesian3.fromDegrees(j.lon, j.lat, h !== undefined ? h + lift : 0),
         point: {
           pixelSize: 9,
           color: Cesium.Color.fromCssColorString(SEVERITY[j.severity]),
           outlineColor: Cesium.Color.WHITE,
           outlineWidth: 2,
-          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+          // Until route heights are known, fall back to clamping.
+          ...(h === undefined ? { heightReference: Cesium.HeightReference.CLAMP_TO_GROUND } : {}),
         },
-      }),
-    );
-  }, [status, jolts, showBumps]);
+      });
+    });
+  }, [status, surface, jolts, showBumps, heights, trail]);
 
   return (
     <div className={`relative overflow-hidden bg-background ${className ?? ""}`}>

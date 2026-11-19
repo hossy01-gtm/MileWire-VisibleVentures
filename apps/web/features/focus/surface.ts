@@ -62,3 +62,69 @@ export function heightsDiffer(a: ReadonlyArray<number> | null | undefined, b: Re
   for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > toleranceM) return true;
   return false;
 }
+
+/* ---------- Street-floor sampling (ported from the Pada business console's mesh-floor policy) ---------- */
+
+/**
+ * `scene.sampleHeight` returns the first surface it hits: a rooftop or tree canopy when the GPS pin sits
+ * on a footprint. A ring around the pin usually still sees pavement, so the lowest plausible reading wins.
+ */
+export const STREET_PROBE_RADIUS_M = 10;
+const STREET_PROBE_BEARINGS_DEG = [0, 90, 180, 270] as const;
+/** Coarse LOD from a continent-scale view is not street height; only trust samples with the camera this close. */
+export const MAX_TRUSTED_SAMPLE_CAMERA_HEIGHT_M = 2500;
+
+/** Centre plus a cardinal ring, as metres east / north of the pin. */
+export function streetProbeOffsetsM(radiusM = STREET_PROBE_RADIUS_M): { eastM: number; northM: number }[] {
+  const offsets = [{ eastM: 0, northM: 0 }];
+  for (const bearing of STREET_PROBE_BEARINGS_DEG) {
+    const rad = (bearing * Math.PI) / 180;
+    offsets.push({ eastM: Math.sin(rad) * radiusM, northM: Math.cos(rad) * radiusM });
+  }
+  return offsets;
+}
+
+export function offsetLatLon(latDeg: number, lonDeg: number, eastM: number, northM: number): { lat: number; lon: number } {
+  const cosLat = Math.cos((latDeg * Math.PI) / 180);
+  return { lat: latDeg + northM / 111_320, lon: lonDeg + eastM / (111_320 * Math.max(0.15, cosLat)) };
+}
+
+/** Street height: the lowest plausible probe, so a lone rooftop or canopy at the pin cannot win. */
+export function pickStreetFloor(heights: ReadonlyArray<number | null | undefined>): number | undefined {
+  let floor: number | undefined;
+  for (const h of heights) {
+    if (!isPlausibleSurfaceHeight(h ?? undefined)) continue;
+    floor = floor === undefined ? (h as number) : Math.min(floor, h as number);
+  }
+  return floor;
+}
+
+/** Mesh samples are meaningful only with the camera close in, and tiles settled (or the camera very near the ground). */
+export function shouldTrustMeshSample(cameraHeightM: number | null | undefined, tilesLoaded: boolean): boolean {
+  if (cameraHeightM == null || !Number.isFinite(cameraHeightM) || cameraHeightM > MAX_TRUSTED_SAMPLE_CAMERA_HEIGHT_M) return false;
+  return tilesLoaded || cameraHeightM < 400;
+}
+
+/** Metres the eye must rise to clear the rendered surface; 0 when already clear (sub-2 m noise ignored). */
+export function groundClearanceDeficit(cameraHeightM: number, groundM: number | null | undefined, clearanceM: number): number {
+  if (!Number.isFinite(cameraHeightM) || groundM == null || !Number.isFinite(groundM)) return 0;
+  const deficit = groundM + Math.max(0, clearanceM) - cameraHeightM;
+  return deficit > 2 ? deficit : 0;
+}
+
+/** Index of the `trail` vertex ([lon, lat]) nearest a point, or -1 for an empty trail. */
+export function nearestTrailIndex(trail: ReadonlyArray<readonly [number, number]>, lon: number, lat: number): number {
+  let best = -1;
+  let bestD = Infinity;
+  const k = Math.cos((lat * Math.PI) / 180);
+  for (let i = 0; i < trail.length; i++) {
+    const dx = (trail[i][0] - lon) * k;
+    const dy = trail[i][1] - lat;
+    const d = dx * dx + dy * dy;
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  }
+  return best;
+}
