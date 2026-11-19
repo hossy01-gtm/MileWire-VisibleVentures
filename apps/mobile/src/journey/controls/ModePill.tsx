@@ -113,6 +113,7 @@ export function ModePill({ unit, confirming, starting, onStart }: Props) {
           accessibilityRole="button"
           accessibilityLabel="Track mode"
           accessibilityHint={`Press and hold to start tracking. It also starts by itself when you reach ${threshold}.`}
+          accessibilityValue={{ text: subtitle }}
           accessibilityState={{ disabled: starting, busy: starting }}
           testID="track-pill"
           disabled={starting}
